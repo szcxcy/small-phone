@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>API 管理 - 可爱 QQ</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "PingFang SC", "微软雅黑", sans-serif;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f5f5f5;
+    }
+
+    .phone-screen {
+      width: 375px;
+      height: 812px;
+      border: 1px solid #eee;
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 36px;
+      height: 36px;
+      background: #f8dce8;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(255, 182, 193, 0.3);
+      z-index: 999;
+    }
+
+    .back-btn::after {
+      content: '';
+      width: 14px;
+      height: 14px;
+      border-top: 2px solid #ffabb8;
+      border-left: 2px solid #ffabb8;
+      transform: rotate(-45deg);
+    }
+
+    .page-title {
+      position: absolute;
+      top: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 18px;
+      color: #333;
+      font-weight: bold;
+      z-index: 990;
+    }
+
+    .content-container {
+      position: absolute;
+      top: 80px;
+      left: 0;
+      width: 100%;
+      height: calc(100% - 80px);
+      padding: 20px;
+      overflow-y: auto;
+      z-index: 980;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #f5f5f5;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .btn-test {
+      position: relative;
+      width: 100%;
+      padding: 12px;
+      background: #ff69b4;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    .loading-spinner {
+      display: none;
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: translateY(-50%) rotate(360deg);
+      }
+    }
+
+    .api-list {
+      margin-top: 20px;
+    }
+
+    .api-item {
+      padding: 10px;
+      border: 1px solid #f5f5f5;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      background: #fff;
+    }
+
+    .api-item span {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .edit-btn,
+    .delete-btn {
+      margin-right: 5px;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .edit-btn {
+      background: #409eff;
+      color: #fff;
+    }
+
+    .delete-btn {
+      background: #f56c6c;
+      color: #fff;
+    }
+
+    #apiKey,
+    #apiUrl,
+    #apiName,
+    #mainModel,
+    #subModel {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #f5f5f5;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="phone-screen">
+    <div class="back-btn" onclick="backToQQMain()"></div>
+    <div class="page-title">API 管理</div>
+    <div class="content-container">
+      <div class="form-group">
+        <label class="form-label">API 名称（标识）</label>
+        <input type="text" class="form-input" id="apiName" placeholder="请输入 API 名称">
+      </div>
+      <div class="form-group">
+        <label class="form-label">API URL（接口地址）</label>
+        <input type="text" class="form-input" id="apiUrl" placeholder="请输入 API 地址">
+      </div>
+      <div class="form-group">
+        <label class="form-label">API Key</label>
+        <input type="text" class="form-input" id="apiKey" placeholder="请输入 API 密钥">
+      </div>
+      <div class="form-group">
+        <label class="form-label">主模型名称</label>
+        <input type="text" class="form-input" id="mainModel" placeholder="请输入主模型名称">
+      </div>
+      <div class="form-group">
+        <label class="form-label">副模型名称</label>
+        <input type="text" class="form-input" id="subModel" placeholder="请输入副模型名称">
+      </div>
+      <button class="btn-test" onclick="testAndSaveApi()">
+        测试连接 & 保存
+        <div class="loading-spinner"></div>
+      </button>
+      <div class="api-list" id="apiList">
+        <!-- 动态渲染已保存的 API 配置 -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 本地存储 Key，与 QQ 主逻辑保持一致
+    const STORAGE_KEYS = {
+      API: 'apiManagerConfigs'
+    };
+    let editingIndex = -1; // 用于标记当前编辑的配置索引，-1 表示非编辑状态
+
+    // 页面初始化：加载已保存的 API 配置
+    window.onload = function () {
+      renderApiConfigs();
+    };
+
+    // 1. 加载 API 配置
+    function loadApiConfigs() {
+      const configs = localStorage.getItem(STORAGE_KEYS.API);
+      return configs ? JSON.parse(configs) : [];
+    }
+
+    // 2. 保存 API 配置到本地存储
+    function saveApiConfigs(configs) {
+      localStorage.setItem(STORAGE_KEYS.API, JSON.stringify(configs));
+    }
+
+    // 3. 渲染已保存的 API 配置列表
+    function renderApiConfigs() {
+      const apiList = document.getElementById('apiList');
+      const configs = loadApiConfigs();
+      if (configs.length === 0) {
+        apiList.innerHTML = '<div style="text-align:center; color:#999; font-size:12px; padding:10px;">暂无 API 配置，填写上方表单试试吧～</div>';
+        return;
+      }
+      let html = '';
+      configs.forEach((config, index) => {
+        html += `
+          <div class="api-item" data-index="${index}">
+            <span>API 名称：${config.apiName}</span>
+            <span>API URL：${config.apiUrl}</span>
+            <span>主模型：${config.mainModel}</span>
+            <span>副模型：${config.subModel}</span>
+            <button class="edit-btn" onclick="editApi(${index})">编辑</button>
+            <button class="delete-btn" onclick="deleteApi(${index})">删除</button>
+          </div>
+        `;
+      });
+      apiList.innerHTML = html;
+    }
+
+    // 4. 测试连接并保存 API 配置（核心修改：调整 URL 拼接逻辑，按规范传 API 密钥）
+    async function testAndSaveApi() {
+      const apiName = document.getElementById('apiName').value.trim();
+      const apiUrl = document.getElementById('apiUrl').value.trim();
+      const apiKey = document.getElementById('apiKey').value.trim();
+      const mainModel = document.getElementById('mainModel').value.trim();
+      const subModel = document.getElementById('subModel').value.trim();
+      const btn = document.querySelector('.btn-test');
+      const spinner = document.querySelector('.loading-spinner');
+      // 校验必填项
+      if (!apiName || !apiUrl || !apiKey || !mainModel || !subModel) {
+        alert('请填写完整信息（所有项均为必填）！');
+        return;
+      }
+      // 显示加载动画，禁用按钮防止重复点击
+      spinner.style.display = 'inline-block';
+      btn.disabled = true;
+      try {
+        // 拼接包含 API 密钥的请求 URL（以 Gemini API 的 generateContent 接口示例，可根据实际接口调整）
+        // 这里假设 API URL 是基础域名，需拼接具体接口路径和 key 参数，实际按真实文档为准
+        const fullUrl = `${apiUrl}/models/gemini-pro:generateContent?key=${apiKey}`; 
+        const response = await fetch(fullUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: mainModel,
+            contents: [{ role: 'user', parts: ['测试连接'] }]
+          }),
+          timeout: 5000 // 5 秒超时，避免一直等待
+        });
+        // 处理接口错误
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: { message: '接口返回异常' } }));
+          throw new Error(`API 错误：${errorData.error.message || '未知错误'}`);
+        }
+        // 测试通过：读取现有配置，添加/更新新配置
+        const configs = loadApiConfigs();
+        const newConfig = { apiName, apiUrl, apiKey, mainModel, subModel };
+        if (editingIndex!== -1) {
+          // 编辑模式：替换原有配置
+          configs[editingIndex] = newConfig;
+          editingIndex = -1; // 重置编辑索引
+        } else {
+          // 新增模式：添加到配置数组
+          configs.push(newConfig);
+        }
+        // 保存到本地存储，提示成功
+        saveApiConfigs(configs);
+        alert('测试通过，API 配置已保存！');
+        // 清空表单
+        document.getElementById('apiName').value = '';
+        document.getElementById('apiUrl').value = '';
+        document.getElementById('apiKey').value = '';
+        document.getElementById('mainModel').value = '';
+        document.getElementById('subModel').value = '';
+      } catch (error) {
+        // 测试失败提示
+        alert(`测试失败：${error.message}`);
+      } finally {
+        // 无论成败，隐藏加载动画，启用按钮
+        spinner.style.display = 'none';
+        btn.disabled = false;
+      }
+    }
+
+    // 5. 编辑 API 配置
+    function editApi(index) {
+      const configs = loadApiConfigs();
+      const config = configs[index];
+      if (!config) return;
+      // 将配置信息回填到表单
+      document.getElementById('apiName').value = config.apiName;
+      document.getElementById('apiUrl').value = config.apiUrl;
+      document.getElementById('apiKey').value = config.apiKey;
+      document.getElementById('mainModel').value = config.mainModel;
+      document.getElementById('subModel').value = config.subModel;
+      editingIndex = index; // 标记当前编辑索引
+    }
+
+    // 6. 删除 API 配置
+    function deleteApi(index) {
+      const configs = loadApiConfigs();
+      if (index < 0 || index >= configs.length) return;
+      if (confirm('确定删除该 API 配置吗？删除后不可恢复！')) {
+        configs.splice(index, 1);
+        saveApiConfigs(configs);
+        renderApiConfigs();
+      }
+    }
+
+    // 7. 返回 QQ 主界面
+    function backToQQMain() {
+      window.location.href = 'qq-main.html';
+    }
+  </script>
+</body>
+
+</html>

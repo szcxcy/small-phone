@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>生成联系人动态 - 可爱QQ</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "PingFang SC", "微软雅黑", sans-serif;
+    }
+    body {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f5f5f5;
+    }
+    /* 手机容器 */
+    .phone-screen {
+      width: 375px;
+      height: 812px;
+      border: 1px solid #eee;
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    /* 返回键 */
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 36px;
+      height: 36px;
+      background: #f8dce8;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(255,182,193,0.3);
+      z-index: 999;
+    }
+    .back-btn::after {
+      content: '';
+      width: 14px;
+      height: 14px;
+      border-top: 2px solid #ffabb8;
+      border-left: 2px solid #ffabb8;
+      transform: rotate(-45deg);
+    }
+    /* 标题 */
+    .page-title {
+      position: absolute;
+      top: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 18px;
+      color: #333;
+      font-weight: bold;
+      z-index: 990;
+    }
+    /* 内容区 */
+    .content-container {
+      position: absolute;
+      top: 80px;
+      left: 0;
+      width: 100%;
+      height: calc(100% - 80px);
+      padding: 20px;
+      overflow-y: auto;
+      z-index: 980;
+    }
+    /* 联系人列表 */
+    .contact-list {
+      width: 100%;
+    }
+    .contact-item {
+      display: flex;
+      align-items: center;
+      padding: 15px 10px;
+      border-bottom: 1px solid #f5f5f5;
+      cursor: pointer;
+    }
+    .contact-item:hover {
+      background: #f5f5f5;
+    }
+    .contact-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
+      background: #eee;
+      overflow: hidden;
+      margin-right: 15px;
+    }
+    .contact-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .contact-info {
+      flex: 1;
+    }
+    .contact-name {
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 3px;
+    }
+    .contact-setting {
+      font-size: 12px;
+      color: #999;
+    }
+    /* 空联系人提示 */
+    .empty-contact {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: #999;
+      font-size: 14px;
+    }
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+      color: #eee;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-screen">
+    <!-- 返回键（返回QQ主界面） -->
+    <div class="back-btn" onclick="backToQQMain()"></div>
+    <!-- 标题 -->
+    <div class="page-title">选择联系人生成动态</div>
+    <!-- 内容区 -->
+    <div class="content-container">
+      <div id="contactListContainer" class="contact-list">
+        <!-- 动态渲染联系人列表 -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 本地存储Key
+    const STORAGE_KEYS = {
+      QQ: 'qqConfig'
+    };
+    // 联系人列表
+    let contactList = [];
+
+    // 页面初始化：加载联系人列表
+    window.onload = initPage();
+
+    // 1. 初始化页面
+    function initPage() {
+      // 读取临时存储的联系人列表（从QQ主界面传递）
+      const tempContacts = localStorage.getItem('tempContactList');
+      if (tempContacts) {
+        contactList = JSON.parse(tempContacts);
+        // 清除临时存储
+        localStorage.removeItem('tempContactList');
+      } else {
+        // 直接读取QQ配置
+        const savedQQ = localStorage.getItem(STORAGE_KEYS.QQ);
+        if (savedQQ) {
+          const qqConfig = JSON.parse(savedQQ);
+          contactList = qqConfig.contacts;
+        }
+      }
+
+      // 渲染联系人列表
+      renderContactList();
+    }
+
+    // 2. 渲染联系人列表
+    function renderContactList() {
+      const container = document.getElementById('contactListContainer');
+      
+      if (contactList.length === 0) {
+        container.innerHTML = `
+          <div class="empty-contact">
+            <div class="empty-icon">👥</div>
+            <div>没有联系人</div>
+          </div>
+        `;
+        return;
+      }
+
+      // 渲染联系人
+      let html = '';
+      contactList.forEach(contact => {
+        html += `
+          <div class="contact-item" onclick="generateMoment(${contact.id}, '${contact.name}', '${contact.avatar || 'app.img/default-contact.png'}', '${contact.setting || ''}')">
+            <div class="contact-avatar">
+              <img src="${contact.avatar || 'app.img/default-contact.png'}" alt="${contact.name}">
+            </div>
+            <div class="contact-info">
+              <div class="contact-name">${contact.name}</div>
+              <div class="contact-setting">${contact.setting || '暂无设定'}</div>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    // 3. 生成联系人动态（基于角色设定和聊天记录）
+    function generateMoment(contactId, contactName, contactAvatar, contactSetting) {
+      // 读取QQ配置，获取该联系人的聊天记录
+      const savedQQ = localStorage.getItem(STORAGE_KEYS.QQ);
+      if (!savedQQ) {
+        alert('生成失败，未找到QQ配置！');
+        backToQQMain();
+        return;
+      }
+
+      const qqConfig = JSON.parse(savedQQ);
+      const contact = qqConfig.contacts.find(c => c.id === contactId);
+      const chatLogs = contact ? contact.chatLogs || [] : [];
+
+      // 基于角色设定和聊天记录生成动态内容（简化逻辑）
+      let momentContent = '';
+      // 1. 优先使用角色设定生成
+      if (contactSetting) {
+        const settingThemes = {
+          '活泼的学生': ['今天又和好朋友一起学习啦～', '新学的知识点好有趣！', '放学路上看到超可爱的小猫～'],
+          '职场白领': ['今天完成了重要项目，开心！', '下午茶的咖啡超好喝～', '加班ing，加油！'],
+          '文艺青年': ['今天读了一本超治愈的书～', '公园的花开了，好漂亮～', '听了一首喜欢的歌，分享给大家～'],
+          '游戏爱好者': ['今天游戏上分啦！', '新出的游戏好有意思～', '组队开黑，缺一个队友！']
+        };
+        // 匹配设定关键词，生成对应内容
+        let matchedTheme = '通用';
+        for (const theme in settingThemes) {
+          if (contactSetting.includes(theme)) {
+            matchedTheme = theme;
+            break;
+          }
+        }
+        // 通用内容（无匹配设定时）
+        const defaultThemes = ['今天天气真好～', '分享一件开心的小事～', '大家最近还好吗？'];
+        const targetThemes = settingThemes[matchedTheme] || defaultThemes;
+        momentContent = targetThemes[Math.floor(Math.random() * targetThemes.length)];
+      } 
+      // 2. 无设定时，基于最新聊天记录生成
+      else if (chatLogs.length > 0) {
+        const lastLog = chatLogs[chatLogs.length - 1];
+        momentContent = `今天和${lastLog.isUser ? '朋友' : '我'}聊到了${lastLog.content.slice(0, 8)}... 很有收获～`;
+      } 
+      // 3. 无设定无聊天记录，生成通用内容
+      else {
+        momentContent = '今天也是开心的一天～';
+      }
+
+      // 创建联系人动态
+      const newMoment = {
+        id: Date.now(),
+        authorId: contactId, // 标记为该联系人的动态
+        authorName: contactName,
+        authorAvatar: contactAvatar,
+        content: momentContent,
+        media: Math.random() > 0.5 ? { // 50%概率添加图片占位符
+          type: 'image',
+          url: 'app.img/default-moment-img.jpg' // 默认动态图片
+        } : null,
+        time: new Date().toISOString(),
+        comments: []
+      };
+
+      // 添加到动态列表
+      qqConfig.moments.push(newMoment);
+      // 保存到本地存储
+      localStorage.setItem(STORAGE_KEYS.QQ, JSON.stringify(qqConfig));
+
+      // 提示并返回QQ主界面
+      alert(`已为${contactName}生成动态：${momentContent}`);
+      backToQQMain();
+    }
+
+    // 4. 返回QQ主界面
+    function backToQQMain() {
+      window.location.href = 'qq-main.html';
+    }
+  </script>
+</body>
+</html>
+

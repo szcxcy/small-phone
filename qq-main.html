@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>可爱QQ</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "PingFang SC", "微软雅黑", sans-serif;
+    }
+    body {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f5f5f5;
+    }
+    /* 手机容器 */
+    .phone-screen {
+      width: 375px;
+      height: 812px;
+      border: 1px solid #eee;
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    /* 返回键 */
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 36px;
+      height: 36px;
+      background: #f8dce8;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(255,182,193,0.3);
+      z-index: 999;
+    }
+    .back-btn::after {
+      content: '';
+      width: 14px;
+      height: 14px;
+      border-top: 2px solid #ffabb8;
+      border-left: 2px solid #ffabb8;
+      transform: rotate(-45deg);
+    }
+    /* 用户头像：移至左上角（返回键右侧） */
+    .user-avatar {
+      position: absolute;
+      top: 20px;
+      left: 70px; /* 与返回键间距14px */
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #eee;
+      overflow: hidden;
+      cursor: pointer;
+      z-index: 998;
+    }
+    .user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    /* 头像菜单：跟随头像位置调整 */
+    .avatar-menu {
+      position: absolute;
+      top: 65px;
+      left: 70px;
+      width: 120px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      z-index: 997;
+      display: none;
+    }
+    .avatar-menu.active {
+      display: block;
+    }
+    .menu-item {
+      padding: 8px 12px;
+      font-size: 14px;
+      color: #333;
+      cursor: pointer;
+    }
+    .menu-item:hover {
+      background: #f5f5f5;
+    }
+    /* 头像放大弹窗 */
+    .avatar-modal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: #eee;
+      overflow: hidden;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+      z-index: 1000;
+      display: none;
+    }
+    .avatar-modal.active {
+      display: block;
+    }
+    .avatar-modal img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .close-modal {
+      position: absolute;
+      bottom: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 5px 15px;
+      background: #ff69b4;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    /* 搜索框 */
+    .search-bar {
+      position: absolute;
+      top: 20px;
+      left: 120px; /* 给头像留空间 */
+      right: 70px; /* 给加号留空间 */
+      height: 36px;
+      background: #f5f5f5;
+      border-radius: 18px;
+      padding: 0 15px;
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+      color: #999;
+      z-index: 996;
+    }
+    .search-bar input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      margin-left: 5px;
+    }
+    /* 右上角加号 */
+    .add-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 36px;
+      height: 36px;
+      background: #ff69b4;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      font-size: 20px;
+      line-height: 36px;
+      text-align: center;
+      cursor: pointer;
+      z-index: 995;
+      display: block;
+    }
+    /* 加号菜单 */
+    .add-menu {
+      position: absolute;
+      top: 65px;
+      right: 20px;
+      width: 150px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      z-index: 994;
+      display: none;
+    }
+    .add-menu.active {
+      display: block;
+    }
+    /* 底部Tab栏 */
+    .tab-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 55px;
+      display: flex;
+      border-top: 1px solid #f5f5f5;
+      background: #fff;
+      z-index: 990;
+    }
+    .tab-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-size: 12px;
+      color: #999;
+      cursor: pointer;
+      gap: 4px;
+    }
+    .tab-item.active {
+      color: #ff69b4;
+    }
+    .tab-icon {
+      font-size: 20px;
+    }
+    /* 内容区：调整为搜索栏下方从上排列（移除中间margin） */
+    .content-container {
+      position: absolute;
+      top: 70px; /* 搜索栏底部位置 */
+      left: 0;
+      width: 100%;
+      height: calc(100% - 125px); /* 顶部70px + 底部55px */
+      overflow-y: auto;
+      z-index: 980;
+    }
+    .content-page {
+      width: 100%;
+      height: 100%;
+      display: none;
+      padding-top: 10px; /* 顶部轻微间距 */
+    }
+    .content-page.active {
+      display: block;
+    }
+    /* 空状态提示：调整为顶部对齐，避免居中 */
+    .empty-tip {
+      width: 100%;
+      padding-top: 50px; /* 顶部留空，不居中 */
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      color: #999;
+      font-size: 14px;
+    }
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+      color: #eee;
+    }
+    /* 消息项样式 */
+    .msg-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      border-bottom: 1px solid #f5f5f5;
+      cursor: pointer;
+    }
+    .msg-avatar {
+      width: 45px;
+      height: 45px;
+      border-radius: 8px;
+      background: #eee;
+      overflow: hidden;
+      margin-right: 12px;
+    }
+    .msg-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .msg-info {
+      flex: 1;
+    }
+    .msg-name {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 3px;
+    }
+    .msg-content {
+      font-size: 12px;
+      color: #999;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    /* 联系人项样式：从上排列，无中间间距 */
+    .contact-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      border-bottom: 1px solid #f5f5f5;
+      cursor: pointer;
+    }
+    .contact-avatar {
+      width: 45px;
+      height: 45px;
+      border-radius: 8px;
+      background: #eee;
+      overflow: hidden;
+      margin-right: 12px;
+    }
+    .contact-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .contact-name {
+      font-size: 14px;
+      color: #333;
+    }
+    /* 动态项样式 */
+    .moment-item {
+      padding: 15px 20px;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .moment-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .moment-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #eee;
+      overflow: hidden;
+      margin-right: 10px;
+    }
+    .moment-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .moment-name {
+      font-size: 14px;
+      color: #333;
+      font-weight: 500;
+    }
+    .moment-content {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+    .moment-media {
+      width: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .moment-media img, .moment-media video {
+      width: 100%;
+      height: auto;
+    }
+    /* 动态操作区：图标替代文字 */
+    .moment-actions {
+      display: flex;
+      gap: 20px;
+      font-size: 16px;
+      color: #999;
+    }
+    .action-btn {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+    }
+    .action-icon {
+      font-size: 16px;
+    }
+    /* 隐藏原生文件选择器 */
+    #avatar-upload {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-screen">
+    <!-- 返回键（返回桌面） -->
+    <div class="back-btn" onclick="backToDesktop()"></div>
+    <!-- 用户头像：左上角 -->
+    <div class="user-avatar" onclick="toggleAvatarMenu()">
+      <img id="userAvatarImg" src="app.img/default-avatar.png" alt="用户头像">
+    </div>
+    <!-- 头像菜单 -->
+    <div class="avatar-menu" id="avatarMenu">
+      <div class="menu-item" onclick="showBigAvatar()">查看头像</div>
+      <div class="menu-item" onclick="selectAvatar()">更换头像</div>
+      <input type="file" id="avatar-upload" accept="image/*" onchange="uploadAvatar(this)">
+    </div>
+    <!-- 头像放大弹窗 -->
+    <div class="avatar-modal" id="avatarModal">
+      <img id="bigAvatarImg" src="app.img/default-avatar.png" alt="放大头像">
+      <button class="close-modal" onclick="closeAvatarModal()">关闭</button>
+    </div>
+    <!-- 搜索框 -->
+    <div class="search-bar" id="searchBar">
+      <span>🔍</span>
+      <input type="text" id="searchInput" placeholder="搜索" oninput="handleSearch()">
+    </div>
+    <!-- 右上角加号 -->
+    <button class="add-btn" id="addBtn" onclick="toggleAddMenu()">+</button>
+    <!-- 加号菜单 -->
+    <div class="add-menu" id="addMenu">
+      <div class="menu-item" id="msgAddMenu" style="display:none;">暂无消息相关功能</div>
+      <div class="menu-item" id="contactAddMenu" style="display:none;" onclick="goToAddContact()">添加联系人</div>
+      <div class="menu-item" id="groupAddMenu" style="display:none;" onclick="createGroupChat()">创建群聊</div>
+      <div class="menu-item" id="momentAddMenu" style="display:none;" onclick="goToAddMoment()">添加动态</div>
+      <div class="menu-item" id="generateMomentMenu" style="display:none;" onclick="goToGenerateMoment()">生成联系人动态</div>
+    </div>
+    <!-- 底部Tab栏 -->
+    <div class="tab-bar">
+      <div class="tab-item active" data-tab="msg" onclick="switchTab('msg')">
+        <div class="tab-icon">💬</div>
+        <div class="tab-text">消息</div>
+      </div>
+      <div class="tab-item" data-tab="contact" onclick="switchTab('contact')">
+        <div class="tab-icon">👥</div>
+        <div class="tab-text">联系人</div>
+      </div>
+      <div class="tab-item" data-tab="moment" onclick="switchTab('moment')">
+        <div class="tab-icon">📱</div>
+        <div class="tab-text">动态</div>
+      </div>
+    </div>
+    <!-- 内容区 -->
+    <div class="content-container">
+      <!-- 消息页 -->
+      <div class="content-page active" id="msgPage">
+        <div id="msgList" class="empty-tip">
+          <div class="empty-icon">💬</div>
+          <div>没有消息</div>
+        </div>
+      </div>
+      <!-- 联系人页 -->
+      <div class="content-page" id="contactPage">
+        <div id="contactList" class="empty-tip">
+          <div class="empty-icon">👥</div>
+          <div>没有联系人</div>
+        </div>
+      </div>
+      <!-- 动态页 -->
+      <div class="content-page" id="momentPage">
+        <div id="momentList" class="empty-tip">
+          <div class="empty-icon">📱</div>
+          <div>没有动态</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    // 本地存储Key
+    const STORAGE_KEYS = {
+      QQ: 'qqConfig',
+      API: 'apiManagerConfigs',
+      MUSIC: 'musicPlayerConfig',
+      EMOJI: 'qqEmojiStorage',
+      IMAGE: 'qqImageStorage' // 新增：图片持久化存储Key
+    };
+    // 全局状态
+    let qqConfig = {
+      userAvatar: 'app.img/default-avatar.png',
+      contacts: [],
+      moments: [],
+      emojiList: [],
+      imageMap: {} // 新增：图片URL映射（持久化存储图片Base64）
+    };
+    let activeTab = 'msg';
+
+    // 页面初始化：加载所有本地数据（含图片持久化）
+    window.onload = initQQ();
+
+    // 1. 初始化QQ配置（修复图片本地保存）
+    function initQQ() {
+      const savedQQ = localStorage.getItem(STORAGE_KEYS.QQ);
+      if (savedQQ) {
+        qqConfig = JSON.parse(savedQQ);
+        // 恢复用户头像（从imageMap读取Base64）
+        const userAvatarBase64 = qqConfig.imageMap[qqConfig.userAvatar];
+        if (userAvatarBase64) {
+          qqConfig.userAvatar = userAvatarBase64;
+        }
+        // 恢复联系人头像/背景（从imageMap读取Base64）
+        qqConfig.contacts.forEach(contact => {
+          if (contact.avatar && qqConfig.imageMap[contact.avatar]) {
+            contact.avatar = qqConfig.imageMap[contact.avatar];
+          }
+          if (contact.bg && qqConfig.imageMap[contact.bg]) {
+            contact.bg = qqConfig.imageMap[contact.bg];
+          }
+        });
+        // 恢复动态图片
+        qqConfig.moments.forEach(moment => {
+          if (moment.media?.url && qqConfig.imageMap[moment.media.url]) {
+            moment.media.url = qqConfig.imageMap[moment.media.url];
+          }
+        });
+        // 恢复表情包
+        qqConfig.emojiList.forEach(emoji => {
+          if (emoji.url && qqConfig.imageMap[emoji.url]) {
+            emoji.url = qqConfig.imageMap[emoji.url];
+          }
+        });
+        // 更新DOM显示
+        document.getElementById('userAvatarImg').src = qqConfig.userAvatar;
+        document.getElementById('bigAvatarImg').src = qqConfig.userAvatar;
+        localStorage.setItem(STORAGE_KEYS.EMOJI, JSON.stringify(qqConfig.emojiList));
+      } else {
+        qqConfig = {
+          userAvatar: 'app.img/default-avatar.png',
+          contacts: [],
+          moments: [],
+          emojiList: [],
+          imageMap: {}
+        };
+        saveQQConfig();
+      }
+      // 渲染页面
+      renderMsgPage();
+      renderContactPage();
+      renderMomentPage();
+      updateAddMenuByTab(activeTab);
+    }
+
+    // 2. 保存QQ配置（含图片Base64持久化）
+    function saveQQConfig() {
+      localStorage.setItem(STORAGE_KEYS.QQ, JSON.stringify(qqConfig));
+    }
+
+    // 3. 图片转Base64（新增：实现图片本地持久化）
+    function imageToBase64(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // 4. 头像上传（修复本地保存）
+    async function uploadAvatar(input) {
+      const file = input.files[0];
+      if (!file) return;
+      // 转Base64并持久化
+      const base64Url = await imageToBase64(file);
+      const tempKey = `avatar_${Date.now()}`;
+      qqConfig.imageMap[tempKey] = base64Url;
+      qqConfig.userAvatar = base64Url;
+      // 更新DOM
+      document.getElementById('userAvatarImg').src = base64Url;
+      document.getElementById('bigAvatarImg').src = base64Url;
+      saveQQConfig();
+      input.value = '';
+    }
+
+    // 5. 其他原有函数（保持不变，新增函数见后续模块）
+    function toggleAvatarMenu() {
+      const menu = document.getElementById('avatarMenu');
+      menu.classList.toggle('active');
+    }
+
+    function showBigAvatar() {
+      const modal = document.getElementById('avatarModal');
+      modal.classList.add('active');
+      toggleAvatarMenu();
+    }
+
+    function closeAvatarModal() {
+      const modal = document.getElementById('avatarModal');
+      modal.classList.remove('active');
+    }
+
+    function selectAvatar() {
+      document.getElementById('avatar-upload').click();
+      toggleAvatarMenu();
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-item').forEach(item => item.classList.remove('active'));
+      document.querySelector(`.tab-item[data-tab="${tabName}"]`).classList.add('active');
+      document.querySelectorAll('.content-page').forEach(page => page.classList.remove('active'));
+      document.getElementById(`${tabName}Page`).classList.add('active');
+      const searchInput = document.getElementById('searchInput');
+      switch (tabName) {
+        case 'msg':
+          searchInput.placeholder = '搜索聊天记录';
+          break;
+        case 'contact':
+          searchInput.placeholder = '搜索联系人';
+          break;
+        case 'moment':
+          searchInput.placeholder = '搜索动态';
+          break;
+      }
+      activeTab = tabName;
+      updateAddMenuByTab(tabName);
+      searchInput.value = '';
+    }
+
+    function updateAddMenuByTab(tabName) {
+      document.getElementById('msgAddMenu').style.display = 'none';
+      document.getElementById('contactAddMenu').style.display = 'none';
+      document.getElementById('groupAddMenu').style.display = 'none';
+      document.getElementById('momentAddMenu').style.display = 'none';
+      document.getElementById('generateMomentMenu').style.display = 'none';
+      switch (tabName) {
+        case 'contact':
+          document.getElementById('contactAddMenu').style.display = 'block';
+          document.getElementById('groupAddMenu').style.display = 'block';
+          break;
+        case 'moment':
+          document.getElementById('momentAddMenu').style.display = 'block';
+          document.getElementById('generateMomentMenu').style.display = 'block';
+          break;
+        case 'msg':
+          document.getElementById('msgAddMenu').style.display = 'block';
+          break;
+      }
+    }
+
+    function toggleAddMenu() {
+      const addMenu = document.getElementById('addMenu');
+      addMenu.classList.toggle('active');
+    }
+
+    function handleSearch() {
+      const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+      if (activeTab === 'msg') searchMsg(keyword);
+      else if (activeTab === 'contact') searchContact(keyword);
+      else if (activeTab === 'moment') searchMoment(keyword);
+    }
+
+    function searchMsg(keyword) {
+      const msgList = document.getElementById('msgList');
+      const filteredContacts = qqConfig.contacts.filter(contact => {
+        if (!contact.chatLogs || contact.chatLogs.length === 0) return false;
+        return contact.chatLogs.some(log => log.content.toLowerCase().includes(keyword)) || contact.name.toLowerCase().includes(keyword);
+      });
+      if (filteredContacts.length === 0) {
+        msgList.innerHTML = `<div class="empty-tip"><div class="empty-icon">🔍</div><div>未找到相关消息</div></div>`;
+        return;
+      }
+      let html = '';
+      filteredContacts.forEach(contact => {
+        const lastLog = contact.chatLogs[contact.chatLogs.length - 1];
+        html += `
+          <div class="msg-item" onclick="goToChat(${contact.id})" oncontextmenu="showMsgMenu(event, ${contact.id})">
+            <div class="msg-avatar"><img src="${contact.avatar || 'app.img/default-contact.png'}" alt="${contact.name}"></div>
+            <div class="msg-info"><div class="msg-name">${contact.name}</div><div class="msg-content">${lastLog.content}</div></div>
+          </div>
+        `;
+      });
+      msgList.innerHTML = html;
+    }
+
+    function searchContact(keyword) {
+      const contactList = document.getElementById('contactList');
+      const filteredContacts = qqConfig.contacts.filter(contact => contact.name.toLowerCase().includes(keyword));
+      if (filteredContacts.length === 0) {
+        contactList.innerHTML = `<div class="empty-tip"><div class="empty-icon">👥</div><div>未找到相关联系人</div></div>`;
+        return;
+      }
+      let html = '';
+      filteredContacts.forEach(contact => {
+        html += `
+          <div class="contact-item" onclick="goToContactDetail(${contact.id})">
+            <div class="contact-avatar"><img src="${contact.avatar || 'app.img/default-contact.png'}" alt="${contact.name}"></div>
+            <div class="contact-name">${contact.name}</div>
+          </div>
+        `;
+      });
+      contactList.innerHTML = html;
+    }
+
+    function searchMoment(keyword) {
+      const momentList = document.getElementById('momentList');
+      const filteredMoments = qqConfig.moments.filter(moment => moment.content.toLowerCase().includes(keyword) || moment.authorName.toLowerCase().includes(keyword));
+      if (filteredMoments.length === 0) {
+        momentList.innerHTML = `<div class="empty-tip"><div class="empty-icon">📱</div><div>未找到相关动态</div></div>`;
+        return;
+      }
+      renderMomentList(filteredMoments);
+    }
+
+    // 6. 动态点赞功能（修复：单次点赞切换）
+    function likeMoment(momentId) {
+      const moment = qqConfig.moments.find(m => m.id === momentId);
+      if (moment) {
+        // 记录用户点赞状态（基于localStorage）
+        const likedMoments = JSON.parse(localStorage.getItem('likedMoments') || '[]');
+        const isLiked = likedMoments.includes(momentId);
+        if (isLiked) {
+          // 取消点赞
+          moment.likeCount = Math.max(0, (moment.likeCount || 0) - 1);
+          localStorage.setItem('likedMoments', JSON.stringify(likedMoments.filter(id => id !== momentId)));
+        } else {
+          // 点赞
+          moment.likeCount = (moment.likeCount || 0) + 1;
+          likedMoments.push(momentId);
+          localStorage.setItem('likedMoments', JSON.stringify(likedMoments));
+        }
+        saveQQConfig();
+        renderMomentPage();
+      }
+    }
+
+    // 其他原有函数（renderMsgPage、renderContactPage等）保持不变，确保调用saveQQConfig()时包含imageMap
+    function renderMsgPage() {
+      const msgList = document.getElementById('msgList');
+      const hasChatContacts = qqConfig.contacts.filter(contact => contact.chatLogs && contact.chatLogs.length > 0);
+      if (hasChatContacts.length === 0) {
+        msgList.innerHTML = `<div class="empty-tip"><div class="empty-icon">💬</div><div>没有消息</div></div>`;
+        return;
+      }
+      hasChatContacts.sort((a, b) => new Date(b.chatLogs[b.chatLogs.length - 1].time) - new Date(a.chatLogs[a.chatLogs.length - 1].time));
+      let html = '';
+      hasChatContacts.forEach(contact => {
+        const lastLog = contact.chatLogs[contact.chatLogs.length - 1];
+        html += `
+          <div class="msg-item" onclick="goToChat(${contact.id})" oncontextmenu="showMsgMenu(event, ${contact.id})">
+            <div class="msg-avatar"><img src="${contact.avatar || 'app.img/default-contact.png'}" alt="${contact.name}"></div>
+            <div class="msg-info"><div class="msg-name">${contact.name}</div><div class="msg-content">${lastLog.content}</div></div>
+          </div>
+        `;
+      });
+      msgList.innerHTML = html;
+    }
+
+    function renderContactPage() {
+      const contactList = document.getElementById('contactList');
+      if (qqConfig.contacts.length === 0) {
+        contactList.innerHTML = `<div class="empty-tip"><div class="empty-icon">👥</div><div>没有联系人</div></div>`;
+        return;
+      }
+      qqConfig.contacts.sort((a, b) => a.name.localeCompare(b.name));
+      let html = '';
+      qqConfig.contacts.forEach(contact => {
+        html += `
+          <div class="contact-item" onclick="goToContactDetail(${contact.id})">
+            <div class="contact-avatar"><img src="${contact.avatar || 'app.img/default-contact.png'}" alt="${contact.name}"></div>
+            <div class="contact-name">${contact.name}</div>
+          </div>
+        `;
+      });
+      contactList.innerHTML = html;
+    }
+
+    function renderMomentPage() {
+      const momentList = document.getElementById('momentList');
+      if (qqConfig.moments.length === 0) {
+        momentList.innerHTML = `<div class="empty-tip"><div class="empty-icon">📱</div><div>没有动态</div></div>`;
+        return;
+      }
+      const sortedMoments = [...qqConfig.moments].sort((a, b) => new Date(b.time) - new Date(a.time));
+      renderMomentList(sortedMoments);
+    }
+
+    function renderMomentList(moments) {
+      const momentList = document.getElementById('momentList');
+      let html = '';
+      moments.forEach(moment => {
+        let mediaHtml = '';
+        if (moment.media) {
+          if (moment.media.type === 'image') {
+            mediaHtml = `<div class="moment-media"><img src="${moment.media.url}" alt="动态图片"></div>`;
+          } else if (moment.media.type === 'video') {
+            mediaHtml = `<div class="moment-media"><video controls src="${moment.media.url}"></video></div>`;
+          }
+        }
+        let commentHtml = '';
+        if (moment.comments && moment.comments.length > 0) {
+          moment.comments.forEach(comment => {
+            commentHtml += `<div style="padding:5px 0; font-size:12px; color:#666;"><span style="color:#ff69b4;">${comment.authorName}：</span>${comment.content}<span style="margin-left:10px; color:#999; cursor:pointer;" onclick="replyComment(${moment.id}, ${comment.id})">回复</span></div>`;
+          });
+        }
+        html += `
+          <div class="moment-item" data-moment-id="${moment.id}">
+            <div class="moment-header"><div class="moment-avatar"><img src="${moment.authorAvatar}" alt="${moment.authorName}"></div><div class="moment-name">${moment.authorName}</div></div>
+            <div class="moment-content">${moment.content}</div>
+            ${mediaHtml}
+            <div class="moment-actions">
+              <div class="action-btn" onclick="replyMoment(${moment.id})"><span class="action-icon">💬</span><span>评论(${moment.comments?.length || 0})</span></div>
+              <div class="action-btn" onclick="likeMoment(${moment.id})"><span class="action-icon">❤️</span><span>点赞(${moment.likeCount || 0})</span></div>
+            </div>
+            ${commentHtml}
+            <div class="comment-input" style="margin-top:10px; display:none;"><input type="text" placeholder="输入评论..." style="width:70%; padding:5px; border:1px solid #f5f5f5; border-radius:5px;"><button style="padding:5px 10px; background:#ff69b4; color:#fff; border:none; border-radius:5px; cursor:pointer;" onclick="sendComment(${moment.id})">发送</button></div>
+          </div>
+        `;
+      });
+      momentList.innerHTML = html;
+    }
+
+    // 其余函数（goToAddContact、goToChat等）保持不变，确保调用saveQQConfig()
+    function goToAddContact() {
+      window.location.href = 'qq-add-contact.html';
+    }
+
+    function createGroupChat() {
+      if (qqConfig.contacts.length < 2) {
+        alert('至少需要2个联系人才能创建群聊～');
+        return;
+      }
+      alert('群聊功能已触发');
+    }
+
+    function goToContactDetail(contactId) {
+      localStorage.setItem('currentContactId', contactId);
+      window.location.href = 'qq-contact-detail.html';
+    }
+
+    function goToChat(contactId) {
+      localStorage.setItem('currentChatContactId', contactId);
+      window.location.href = 'qq-chat.html';
+    }
+
+    function showMsgMenu(event, contactId) {
+      event.preventDefault();
+      if (confirm('是否删除该聊天？（聊天数据不删除）')) {
+        renderMsgPage();
+      }
+    }
+
+    function goToAddMoment() {
+      window.location.href = 'qq-add-moment.html';
+    }
+    function goToGenerateMoment() {
+      if (qqConfig.contacts.length === 0) {
+        alert('没有联系人，无法生成联系人动态～');
+        return;
+      }
+      localStorage.setItem('tempContactList', JSON.stringify(qqConfig.contacts));
+      window.location.href = 'qq-generate-moment.html';
+    }
+
+    function replyMoment(momentId) {
+      const momentItem = document.querySelector(`.moment-item[data-moment-id="${momentId}"]`);
+      const commentInput = momentItem.querySelector('.comment-input');
+      commentInput.style.display = 'flex';
+      commentInput.querySelector('input').focus();
+    }
+
+    function replyComment(momentId, commentId) {
+      alert(`回复评论 ${commentId}`);
+    }
+
+    async function sendComment(momentId) {
+      const momentItem = document.querySelector(`.moment-item[data-moment-id="${momentId}"]`);
+      const input = momentItem.querySelector('.comment-input input');
+      const content = input.value.trim();
+      if (!content) return;
+
+      const moment = qqConfig.moments.find(m => m.id === momentId);
+      if (moment) {
+        if (!moment.comments) moment.comments = [];
+        moment.comments.push({
+          id: Date.now(),
+          authorName: '我',
+          authorAvatar: qqConfig.userAvatar,
+          content: content,
+          time: new Date().toISOString()
+        });
+        saveQQConfig();
+        renderMomentPage();
+      }
+      input.value = '';
+      momentItem.querySelector('.comment-input').style.display = 'none';
+    }
+
+    function backToDesktop() {
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>
+
+   

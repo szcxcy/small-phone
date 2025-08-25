@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, 1.0, user-scalable=no">
+  <title>可爱手机桌面</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f5f5f5;
+    }
+    .phone-screen {
+      width: 375px;
+      height: 812px;
+      border: 1px solid #eee;
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      background: url('app.img/desktop-bg.jpg') no-repeat center/cover;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    /* 系统状态栏 */
+    .system-status {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 10px;
+      color: #000;
+      font-size: 10px;
+      z-index: 10;
+      background: rgba(255,255,255,0.8);
+    }
+    /* 时间状态栏 */
+    .time-status {
+      position: absolute;
+      top: 25px;
+      left: 0;
+      width: 100%;
+      padding: 10px 20px;
+      color: #000;
+      z-index: 9;
+      background: rgba(255,255,255,0.8);
+      border-radius: 0 0 10px 10px;
+    }
+    .time {
+      font-size: 48px;
+      font-weight: bold;
+      color: #ff003c;
+      line-height: 1.2;
+    }
+    .weather {
+      font-size: 14px;
+      margin-top: 5px;
+    }
+    /* 音乐播放栏（可控制播放） */
+    .music-bar {
+      position: absolute;
+      top: 200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      height: 40px;
+      background: rgba(255, 200, 215, 0.9);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      gap: 8px;
+      box-shadow: 0 2px 5px rgba(255, 182, 193, 0.2);
+      z-index: 8;
+    }
+    .music-bar-icon {
+      width: 28px;
+      height: 28px;
+      background: #ffabb8;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      font-size: 14px;
+    }
+    .music-bar-info {
+      flex: 1;
+      overflow: hidden;
+    }
+    .music-bar-song {
+      font-size: 13px;
+      color: #333;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .music-bar-singer {
+      font-size: 11px;
+      color: #666;
+    }
+    .music-bar-controls {
+      display: flex;
+      gap: 8px;
+      color: #ff69b4;
+      font-size: 14px;
+    }
+    .music-bar-btn {
+      cursor: pointer;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    /* 软件图标 */
+    .app-container {
+      position: absolute;
+      top: 260px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      padding: 20px;
+      z-index: 7;
+    }
+    .app-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      justify-items: center;
+    }
+    .app-icon {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #000;
+      font-size: 14px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .app-icon img {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      margin-bottom: 5px;
+      /* 统一图标背景，移除QQ单独蓝色背景 */
+      background: #fff;
+      padding: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-screen">
+    <!-- 系统状态栏 -->
+    <div class="system-status">
+      <div>10.0 KB/S 5G</div>
+      <div>64%</div>
+    </div>
+    <!-- 时间状态栏 -->
+    <div class="time-status">
+      <div class="time" id="currentTime">18:30</div>
+      <div class="weather" id="currentWeather">35° 8月24日 周日</div>
+    </div>
+    <!-- 音乐播放栏（绑定控制逻辑） -->
+    <div class="music-bar">
+      <div class="music-bar-icon">🎵</div>
+      <div class="music-bar-info">
+        <div class="music-bar-song" id="barSongName">无正在播放的音乐</div>
+        <div class="music-bar-singer" id="barSingerName">--</div>
+      </div>
+      <div class="music-bar-controls">
+        <div class="music-bar-btn" id="barPrevBtn" onclick="controlMusic('prev')">⏮</div>
+        <div class="music-bar-btn" id="barPlayBtn" onclick="controlMusic('play')">▶</div>
+        <div class="music-bar-btn" id="barNextBtn" onclick="controlMusic('next')">⏭</div>
+      </div>
+    </div>
+    <!-- 软件图标 -->
+    <div class="app-container">
+      <div class="app-grid">
+        <!-- QQ图标：移除蓝色背景，与其他图标统一 -->
+        <div class="app-icon" onclick="openQQ()">
+          <img src="app.img/icon-qq.png" alt="QQ">
+          <span>QQ</span>
+        </div>
+        <div class="app-icon">
+          <img src="app.img/icon-wechat.png" alt="微信">
+          <span>微信</span>
+        </div>
+        <div class="app-icon" onclick="openMusicPlayer()">
+          <img src="app.img/icon-music.png" alt="音乐播放器">
+          <span>音乐播放器</span>
+        </div>
+        <div class="app-icon" onclick="openApiManager()">
+          <img src="app.img/icon-api.png" alt="API设置">
+          <span>API设置</span>
+        </div>
+        <div class="app-icon">
+          <img src="app.img/icon-forum.png" alt="论坛">
+          <span>论坛</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    // 动态更新时间
+    setInterval(() => {
+      const timeDom = document.getElementById('currentTime');
+      const now = new Date();
+      timeDom.textContent = now.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+    }, 1000);
+
+    // 更新天气信息
+    const weatherDom = document.getElementById('currentWeather');
+    const date = new Date();
+    weatherDom.textContent = `35° ${date.getMonth() + 1}月${date.getDate()}日 周${'日一二三四五六'[date.getDay()]}`;
+
+    // 跳转API管理页
+    function openApiManager() {
+      window.location.href = 'api-manager.html';
+    }
+
+    // 跳转音乐播放器
+    function openMusicPlayer() {
+      window.location.href = 'music-player.html';
+    }
+
+    // 跳转QQ
+    function openQQ() {
+      window.location.href = 'qq-main.html';
+    }
+
+    // 加强返回键功能（退出网页）
+    function exitPage() {
+      window.close();
+    }
+
+    // 音乐跨页面控制核心逻辑
+    const STORAGE_KEY = 'musicPlayerConfig'; 
+    let audio = new Audio(); 
+    let currentMusicInfo = {
+      songName: '无正在播放的音乐',
+      singerName: '--',
+      isPlaying: false,
+      currentIndex: -1,
+      songList: [] 
+    };
+
+    // 初始化：读取存储 & 恢复播放
+    initMusic();
+
+    function initMusic() {
+      const savedData = localStorage.getItem(STORAGE_KEY);
+      if (savedData) {
+        const {songList, config} = JSON.parse(savedData);
+        currentMusicInfo.songList = songList;
+        currentMusicInfo.currentIndex = config.currentSongId;
+        if (config.currentSongId !== -1 && songList.length > 0) {
+          const targetSong = songList[config.currentSongId];
+          currentMusicInfo.songName = targetSong.name;
+          currentMusicInfo.singerName = targetSong.singer;
+          currentMusicInfo.isPlaying = config.isPlaying;
+          // 恢复播放
+          audio.src = targetSong.url; 
+          if (currentMusicInfo.isPlaying) {
+            audio.play().catch(err => console.log('自动播放失败', err));
+          }
+        }
+      }
+      updateMusicBar();
+    }
+
+    // 更新桌面播放栏显示
+    function updateMusicBar() {
+      document.getElementById('barSongName').textContent = currentMusicInfo.songName;
+      document.getElementById('barSingerName').textContent = currentMusicInfo.singerName;
+      const playBtn = document.getElementById('barPlayBtn');
+      playBtn.textContent = currentMusicInfo.isPlaying ? '⏸' : '▶';
+    }
+
+    // 播放控制（上一首/播放暂停/下一首）
+    function controlMusic(action) {
+      if (currentMusicInfo.songList.length === 0) {
+        alert('歌单为空，请先在音乐播放器添加歌曲～');
+        return;
+      }
+      switch (action) {
+        case 'prev':
+          currentMusicInfo.currentIndex = (currentMusicInfo.currentIndex - 1 + currentMusicInfo.songList.length) % currentMusicInfo.songList.length;
+          break;
+        case 'next':
+          currentMusicInfo.currentIndex = (currentMusicInfo.currentIndex + 1) % currentMusicInfo.songList.length;
+          break;
+        case 'play':
+          currentMusicInfo.isPlaying = !currentMusicInfo.isPlaying;
+          break;
+      }
+      // 切换歌曲时更新音频
+      const targetSong = currentMusicInfo.songList[currentMusicInfo.currentIndex];
+      currentMusicInfo.songName = targetSong.name;
+      currentMusicInfo.singerName = targetSong.singer;
+      audio.src = targetSong.url; 
+      // 控制播放/暂停
+      if (currentMusicInfo.isPlaying) {
+        audio.play().catch(err => console.log('播放失败', err));
+      } else {
+        audio.pause();
+      }
+      // 同步更新存储
+      syncMusicConfig();
+      updateMusicBar();
+    }
+
+    // 同步播放状态到本地存储
+    function syncMusicConfig() {
+      const config = {
+        currentSongId: currentMusicInfo.currentIndex,
+        isPlaying: currentMusicInfo.isPlaying
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ 
+        songList: currentMusicInfo.songList, 
+        config: config 
+      }));
+    }
+
+    // 监听音乐播放器的存储变化（跨页面同步）
+    window.addEventListener('storage', (e) => {
+      if (e.key === STORAGE_KEY) {
+        initMusic(); 
+      }
+    });
+  </script>
+</body>
+</html>

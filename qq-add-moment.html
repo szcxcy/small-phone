@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>添加动态 - 可爱QQ</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "PingFang SC", "微软雅黑", sans-serif;
+    }
+    body {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f5f5f5;
+    }
+    /* 手机容器 */
+    .phone-screen {
+      width: 375px;
+      height: 812px;
+      border: 1px solid #eee;
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    /* 返回键 */
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 36px;
+      height: 36px;
+      background: #f8dce8;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(255,182,193,0.3);
+      z-index: 999;
+    }
+    .back-btn::after {
+      content: '';
+      width: 14px;
+      height: 14px;
+      border-top: 2px solid #ffabb8;
+      border-left: 2px solid #ffabb8;
+      transform: rotate(-45deg);
+    }
+    /* 标题 */
+    .page-title {
+      position: absolute;
+      top: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 18px;
+      color: #333;
+      font-weight: bold;
+      z-index: 990;
+    }
+    /* 内容区 */
+    .content-container {
+      position: absolute;
+      top: 80px;
+      left: 0;
+      width: 100%;
+      height: calc(100% - 140px);
+      padding: 20px;
+      overflow-y: auto;
+      z-index: 980;
+    }
+    /* 文本输入框 */
+    .moment-input {
+      width: 100%;
+      min-height: 150px;
+      padding: 15px;
+      border: 1px solid #f5f5f5;
+      border-radius: 10px;
+      font-size: 14px;
+      line-height: 1.5;
+      outline: none;
+      resize: none;
+      margin-bottom: 20px;
+    }
+    /* 媒体添加区 */
+    .media-add {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .media-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #666;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    /* 媒体预览区 */
+    .media-preview {
+      width: 100%;
+      min-height: 100px;
+      border-radius: 10px;
+      background: #f5f5f5;
+      overflow: hidden;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .media-preview.active {
+      display: block;
+    }
+    .media-preview img, .media-preview video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    /* 发送按钮 */
+    .send-btn {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      padding: 12px;
+      background: #ff69b4;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      z-index: 990;
+    }
+    /* 隐藏原生文件选择器 */
+    #image-input, #video-input {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-screen">
+    <!-- 返回键（返回QQ主界面） -->
+    <div class="back-btn" onclick="backToQQMain()"></div>
+    <!-- 标题 -->
+    <div class="page-title">添加动态</div>
+    <!-- 内容区 -->
+    <div class="content-container">
+      <!-- 文本输入框 -->
+      <textarea class="moment-input" id="momentContent" placeholder="分享你的想法..."></textarea>
+      
+      <!-- 媒体添加区 -->
+      <div class="media-add">
+        <div class="media-btn" onclick="selectImage()">🖼️</div>
+        <div class="media-btn" onclick="selectVideo()">🎥</div>
+      </div>
+      
+      <!-- 媒体预览区 -->
+      <div class="media-preview" id="mediaPreview"></div>
+      
+      <!-- 隐藏的文件选择器 -->
+      <input type="file" id="image-input" accept="image/*" onchange="previewMedia('image', this)">
+      <input type="file" id="video-input" accept="video/*" onchange="previewMedia('video', this)">
+    </div>
+    
+    <!-- 发送按钮 -->
+    <button class="send-btn" onclick="sendMoment()">发送动态</button>
+  </div>
+
+  <script>
+    // 本地存储Key
+    const STORAGE_KEYS = {
+      QQ: 'qqConfig'
+    };
+    // 临时媒体数据
+    let tempMedia = {
+      type: null,
+      url: null
+    };
+
+    // 1. 媒体选择与预览
+    function selectImage() {
+      document.getElementById('image-input').click();
+    }
+
+    function selectVideo() {
+      document.getElementById('video-input').click();
+    }
+
+    function previewMedia(type, input) {
+      const file = input.files[0];
+      if (!file) return;
+      
+      // 存储临时媒体数据
+      tempMedia.type = type;
+      tempMedia.url = URL.createObjectURL(file);
+      
+      // 渲染预览
+      const previewDom = document.getElementById('mediaPreview');
+      previewDom.classList.add('active');
+      if (type === 'image') {
+        previewDom.innerHTML = `<img src="${tempMedia.url}" alt="动态图片">`;
+      } else if (type === 'video') {
+        previewDom.innerHTML = `<video controls src="${tempMedia.url}"></video>`;
+      }
+      
+      input.value = '';
+    }
+
+    // 2. 发送动态
+    function sendMoment() {
+      const content = document.getElementById('momentContent').value.trim();
+      if (!content && !tempMedia.url) {
+        alert('请输入动态内容或添加媒体！');
+        return;
+      }
+
+      // 读取QQ配置
+      const savedQQ = localStorage.getItem(STORAGE_KEYS.QQ);
+      const qqConfig = savedQQ ? JSON.parse(savedQQ) : {
+        userAvatar: 'app.img/default-avatar.png',
+        contacts: [],
+        moments: []
+      };
+
+      // 创建新动态
+      const newMoment = {
+        id: Date.now(),
+        authorId: 'user', // 标记为用户动态
+        authorName: '我',
+        authorAvatar: qqConfig.userAvatar,
+        content: content,
+        media: tempMedia.url ? {
+          type: tempMedia.type,
+          url: tempMedia.url
+        } : null,
+        time: new Date().toISOString(),
+        comments: [] // 初始化空评论
+      };
+
+      // 添加到动态列表
+      qqConfig.moments.push(newMoment);
+      // 保存到本地存储
+      localStorage.setItem(STORAGE_KEYS.QQ, JSON.stringify(qqConfig));
+
+      // 模拟AI联系人回复（简化：随机选一个联系人回复）
+      if (qqConfig.contacts.length > 0) {
+        const randomContact = qqConfig.contacts[Math.floor(Math.random() * qqConfig.contacts.length)];
+        newMoment.comments.push({
+          id: Date.now() + 1,
+          authorId: randomContact.id,
+          authorName: randomContact.name,
+          authorAvatar: randomContact.avatar || 'app.img/default-contact.png',
+          content: `支持一下！${content ? content.slice(0, 10) + '...' : ''}`,
+          time: new Date().toISOString()
+        });
+        // 再次保存（含AI回复）
+        localStorage.setItem(STORAGE_KEYS.QQ, JSON.stringify(qqConfig));
+      }
+
+      // 提示并返回QQ主界面
+      alert('动态发送成功！');
+      backToQQMain();
+    }
+
+    // 3. 返回QQ主界面
+    function backToQQMain() {
+      window.location.href = 'qq-main.html';
+    }
+  </script>
+</body>
+</html>

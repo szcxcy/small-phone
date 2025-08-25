@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, 1.0, user-scalable=no">
+  <title>可爱音乐播放器</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "PingFang SC", "微软雅黑", sans-serif;
+    }
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f5f5f5;
+    }
+    /* 手机屏幕容器（与桌面统一尺寸） */
+   .phone-screen {
+      width: 375px;
+      height: 812px;
+      border: 1px solid #eee;
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      /* 默认可爱纯色背景 */
+      background: #fff0f5;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      transition: background 0.5s ease;
+    }
+    /* 可爱返回键 */
+   .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 36px;
+      height: 36px;
+      background: #f8dce8;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(255,182,193,0.3);
+      z-index: 999;
+    }
+   .back-btn::after {
+      content: '';
+      width: 14px;
+      height: 14px;
+      border-top: 2px solid #ffabb8;
+      border-left: 2px solid #ffabb8;
+      transform: rotate(-45deg);
+    }
+    /* 标题栏 */
+   .title-bar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-top: 25px;
+    }
+   .title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #ff69b4;
+    }
+    /* 右上角加号按钮（添加功能） */
+   .add-btn {
+      position: absolute;
+      top: 25px;
+      right: 20px;
+      width: 36px;
+      height: 36px;
+      background: #ff69b4;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      font-size: 24px;
+      line-height: 36px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(255,105,180,0.3);
+      z-index: 998;
+    }
+    /* 添加歌曲弹窗（默认隐藏） */
+   .add-modal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 280px;
+      background: #fff;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      z-index: 1000;
+      display: none;
+    }
+   .modal-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+   .add-option {
+      display: flex;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #f5f5f5;
+      cursor: pointer;
+    }
+   .add-option:last-child {
+      border-bottom: none;
+    }
+   .option-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            background: #f8dce8;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #ff69b4;
+        }
+        .option-text {
+            font-size: 14px;
+            color: #555;
+        }
+        /* 背景切换选择器（弹窗内） */
+        .bg-select {
+            margin-top: 15px;
+        }
+        .bg-title {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .bg-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .bg-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .bg-color.active {
+            border-color: #ff69b4;
+        }
+        .bg1 { background: #fff0f5; } /* 默认 */
+        .bg2 { background: #f0f8ff; }
+        .bg3 { background: #f0fff0; }
+        .bg4 { background: #fff8f0; }
+        /* 本地图片背景选项 */
+        .bg-local-option {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            cursor: pointer;
+        }
+        #local-bg {
+            display: none;
+        }
+        /* 关闭弹窗按钮 */
+        .close-modal {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background: #f5f5f5;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+        }
+        /* 歌单区域 */
+        .playlist-container {
+            width: 100%;
+            height: calc(100% - 160px); /* 减去标题栏和播放栏高度 */
+            margin-top: 20px;
+            padding: 0 20px;
+            overflow-y: auto;
+        }
+        .playlist-title {
+            font-size: 16px;
+            color: #ff69b4;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        .song-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f5f5f5;
+            cursor: pointer;
+        }
+        .song-item:last-child {
+            border-bottom: none;
+        }
+        .song-cover {
+            width: 40px;
+            height: 40px;
+            background: #f8dce8;
+            border-radius: 8px;
+            margin-right: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #ff69b4;
+        }
+        .song-info {
+            flex: 1;
+        }
+        .song-name {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 3px;
+        }
+        .song-singer {
+            font-size: 12px;
+            color: #999;
+        }
+        /* 底部播放栏 */
+        .player-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: #fff;
+            border-top: 1px solid #f5f5f5;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+        }
+        .now-playing-cover {
+            width: 45px;
+            height: 45px;
+            background: #ff69b4;
+            border-radius: 8px;
+            margin-right: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+        .play-info {
+            flex: 1;
+        }
+        .play-song-name {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 3px;
+        }
+        .play-song-singer {
+            font-size: 12px;
+            color: #999;
+        }
+        .play-controls {
+            display: flex;
+            gap: 15px;
+            color: #ff69b4;
+            font-size: 20px;
+        }
+        .play-btn {
+            width: 30px;
+            height: 30px;
+            background: #ff69b4;
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+        }
+        /* 本地文件选择隐藏原生控件 */
+        #local-audio {
+            display: none;
+        }
+        /* 歌曲链接输入框（默认隐藏） */
+        .link-input-container {
+            margin-top: 15px;
+            display: none;
+        }
+        .link-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #f5f5f5;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .confirm-link {
+            width: 100%;
+            padding: 8px;
+            background: #ff69b4;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-screen" id="playerScreen">
+        <!-- 返回键（加强功能：返回桌面不停止音乐） -->
+        <div class="back-btn" onclick="backToDesktop()"></div>
+        
+        <!-- 标题栏 -->
+        <div class="title-bar">
+            <div class="title">可爱音乐盒</div>
+        </div>
+        
+        <!-- 右上角加号按钮 -->
+        <button class="add-btn" onclick="showAddModal()">+</button>
+        
+        <!-- 添加歌曲弹窗 -->
+        <div class="add-modal" id="addModal">
+            <div class="modal-title">添加歌曲 & 切换背景</div>
+            
+            <!-- 添加歌曲选项 -->
+            <div class="add-option" onclick="selectLocalSong()">
+                <div class="option-icon">📂</div>
+                <div class="option-text">从本地文件添加</div>
+            </div>
+            <div class="add-option" onclick="showLinkInput()">
+                <div class="option-icon">🔗</div>
+                <div class="option-text">通过链接添加</div>
+            </div>
+            
+            <!-- 歌曲链接输入框（默认隐藏） -->
+            <div class="link-input-container" id="linkInputContainer">
+                <input type="text" class="link-input" id="songLink" placeholder="输入歌曲在线链接（MP3格式）">
+                <button class="confirm-link" onclick="addLinkSong()">确认添加</button>
+            </div>
+            
+            <!-- 背景切换（含本地图片选项） -->
+            <div class="bg-select">
+                <div class="bg-title">选择播放器背景</div>
+                <div class="bg-options">
+                    <div class="bg-color bg1" onclick="changeBg('bg1')"></div>
+                    <div class="bg-color bg2" onclick="changeBg('bg2')"></div>
+                    <div class="bg-color bg3" onclick="changeBg('bg3')"></div>
+                    <div class="bg-color bg4" onclick="changeBg('bg4')"></div>
+                </div>
+                <!-- 本地图片背景选择 -->
+                <div class="bg-local-option" onclick="selectLocalBg()">
+                    <div class="option-icon">🖼️</div>
+                    <div class="option-text">从本地选择图片背景</div>
+                </div>
+                <!-- 隐藏的本地图片选择控件 -->
+                <input type="file" id="local-bg" accept="image/*" onchange="setLocalBg(this)">
+            </div>
+            
+            <!-- 关闭弹窗 -->
+            <button class="close-modal" onclick="hideAddModal()">关闭</button>
+            
+            <!-- 本地文件选择控件（隐藏） -->
+            <input type="file" id="local-audio" accept="audio/*" onchange="addLocalSong(this)">
+        </div>
+        
+        <!-- 歌单区域 -->
+        <div class="playlist-container">
+            <div class="playlist-title">我的可爱歌单</div>
+            <div class="playlist" id="playlist">
+                <!-- 动态渲染歌单 -->
+            </div>
+        </div>
+        
+        <!-- 底部播放栏 -->
+        <div class="player-bar">
+            <div class="now-playing-cover" id="nowPlayingCover">▶</div>
+            <div class="play-info">
+                <div class="play-song-name" id="nowPlayingName">未播放歌曲</div>
+                <div class="play-song-singer" id="nowPlayingSinger">--</div>
+            </div>
+            <div class="play-controls">
+                <div class="prev-btn" onclick="playPrevSong()">⏮</div>
+                <div class="play-btn" id="playBtn" onclick="togglePlay()">▶</div>
+                <div class="next-btn" onclick="playNextSong()">⏭</div>
+            </div>
+            
+            <!-- 音频播放器（隐藏，仅用于初始加载，跨页面用全局Audio） -->
+            <audio id="audioPlayer" onended="playNextSong()">
+                <source src="" type="audio/mpeg">
+                您的浏览器不支持音频播放
+            </audio>
+        </div>
+    </div>
+    <script>
+        // 本地存储 Key（统一管理，与桌面页一致）
+        const STORAGE_KEY = 'musicPlayerConfig';
+        // 全局变量（与桌面页同步）
+        let currentSongIndex = -1;
+        let songList = [];
+        let playerConfig = {
+            bgType: 'color', 
+            bgValue: 'bg1',  
+            currentSongId: -1,
+            isPlaying: false // 新增：存储播放状态，用于跨页面续播
+        };
+        // 全局Audio对象（关键：实现跨页面不停止播放）
+        let globalAudio = new Audio();
+        // DOM 元素
+        const audioPlayer = document.getElementById('audioPlayer');
+        const playBtn = document.getElementById('playBtn');
+        const nowPlayingCover = document.getElementById('nowPlayingCover');
+        const nowPlayingName = document.getElementById('nowPlayingName');
+        const nowPlayingSinger = document.getElementById('nowPlayingSinger');
+        const playerScreen = document.getElementById('playerScreen');
+
+        // 页面初始化：加载存储 + 恢复播放 + 同步全局Audio
+        initPlayer();
+
+        // 1. 初始化播放器（核心：同步桌面页播放状态）
+        function initPlayer() {
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            if (savedData) {
+                const { songList: savedSongs, config: savedConfig } = JSON.parse(savedData);
+                // 加载歌单
+                songList = savedSongs || [{ 
+                    id: 1, 
+                    name: '小星星', 
+                    singer: '儿童歌谣', 
+                    url: 'https://music.163.com/song/media/outer/url?id=26182041.mp3' 
+                }];
+                // 加载配置（含播放状态）
+                playerConfig = { ...playerConfig, ...savedConfig };
+                // 恢复背景
+                restoreBackground();
+                // 恢复播放：同步全局Audio
+                if (playerConfig.currentSongId !== -1) {
+                    const targetSong = songList.find(song => song.id === playerConfig.currentSongId);
+                    if (targetSong) {
+                        currentSongIndex = songList.indexOf(targetSong);
+                        nowPlayingName.textContent = targetSong.name;
+                        nowPlayingSinger.textContent = targetSong.singer;
+                        // 同步全局Audio源和状态
+                        globalAudio.src = targetSong.url;
+                        if (playerConfig.isPlaying) {
+                            globalAudio.play().catch(err => console.log('自动播放失败', err));
+                            playBtn.textContent = '⏸';
+                            nowPlayingCover.textContent = '▶';
+                        }
+                    }
+                }
+            } else {
+                // 无存储时初始化
+                songList = [{ 
+                    id: 1, 
+                    name: '小星星',
+                    singer: '儿童歌谣', 
+                    url: 'https://music.163.com/song/media/outer/url?id=26182041.mp3' 
+                }];
+                playerConfig.bgType = 'color';
+                playerConfig.bgValue = 'bg1';
+                restoreBackground();
+            }
+            // 渲染歌单
+            renderPlaylist();
+            // 监听全局Audio状态变化，同步界面
+            syncAudioState();
+        }
+
+        // 2. 同步全局Audio播放状态到界面
+        function syncAudioState() {
+            globalAudio.addEventListener('play', () => {
+                playerConfig.isPlaying = true;
+                playBtn.textContent = '⏸';
+                nowPlayingCover.textContent = '▶';
+                saveToLocal(); // 同步存储状态
+            });
+            globalAudio.addEventListener('pause', () => {
+                playerConfig.isPlaying = false;
+                playBtn.textContent = '▶';
+                nowPlayingCover.textContent = '⏸';
+                saveToLocal(); // 同步存储状态
+            });
+        }
+
+        // 3. 保存配置到本地存储（新增isPlaying状态）
+        function saveToLocal() {
+            const data = {
+                songList: songList,
+                config: {
+                    bgType: playerConfig.bgType,
+                    bgValue: playerConfig.bgType === 'color' ? playerConfig.bgValue : '',
+                    currentSongId: currentSongIndex !== -1 ? songList[currentSongIndex].id : -1,
+                    isPlaying: playerConfig.isPlaying // 保存播放状态
+                }
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        // 4. 恢复背景（原有逻辑不变）
+        function restoreBackground() {
+            if (playerConfig.bgType === 'color') {
+                playerScreen.classList.remove('bg1', 'bg2', 'bg3', 'bg4');
+                playerScreen.style.backgroundImage = 'none';
+                playerScreen.classList.add(playerConfig.bgValue);
+                document.querySelectorAll('.bg-color').forEach(bg => bg.classList.remove('active'));
+                document.querySelector(`.bg-color.${playerConfig.bgValue}`)?.classList.add('active');
+            } else {
+                playerScreen.classList.remove('bg1', 'bg2', 'bg3', 'bg4');
+                playerScreen.style.background = '#fff0f5';
+                document.querySelector('.bg-color.bg1').classList.add('active');
+                playerConfig.bgType = 'color';
+                playerConfig.bgValue = 'bg1';
+                saveToLocal();
+            }
+        }
+
+        // 5. 返回桌面（核心：不停止音乐，仅跳转页面）
+        function backToDesktop() {
+            saveToLocal(); // 离开前保存最新状态
+            window.location.href = 'index.html'; // 跳转不影响全局Audio播放
+        }
+
+        // 6. 弹窗控制（原有逻辑不变）
+        function showAddModal() {
+            document.getElementById('addModal').style.display = 'block';
+            document.getElementById('linkInputContainer').style.display = 'none';
+        }
+        function hideAddModal() {
+            document.getElementById('addModal').style.display = 'none';
+        }
+
+        // 7. 歌曲管理（原有逻辑不变，新增歌曲后同步存储）
+        function selectLocalSong() {
+            document.getElementById('local-audio').click();
+        }
+        function addLocalSong(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const songUrl = URL.createObjectURL(file);
+            const songName = file.name.replace(/\.[^/.]+$/, "");
+            const songId = Date.now();
+            songList.push({ id: songId, name: songName, singer: '本地文件', url: songUrl });
+            renderPlaylist();
+            saveToLocal();
+            hideAddModal();
+            input.value = '';
+        }
+        function showLinkInput() {
+            document.getElementById('linkInputContainer').style.display = 'block';
+        }
+        function addLinkSong() {
+            const songLink = document.getElementById('songLink').value.trim();
+            if (!songLink || !songLink.endsWith('.mp3')) {
+                alert('请输入有效的 MP3 歌曲链接～');
+                return;
+            }
+            const             songId = Date.now();
+            songList.push({ id: songId, name: '自定义歌曲', singer: '在线链接', url: songLink });
+            renderPlaylist();
+            saveToLocal();
+            document.getElementById('songLink').value = '';
+            document.getElementById('linkInputContainer').style.display = 'none';
+            hideAddModal();
+        }
+
+        // 8. 背景管理（原有逻辑不变）
+        function changeBg(bgClass) {
+            playerScreen.classList.remove('bg1', 'bg2', 'bg3', 'bg4');
+            playerScreen.style.backgroundImage = 'none';
+            playerScreen.classList.add(bgClass);
+            playerConfig.bgType = 'color';
+            playerConfig.bgValue = bgClass;
+            saveToLocal();
+            document.querySelectorAll('.bg-color').forEach(bg => bg.classList.remove('active'));
+            document.querySelector(`.bg-color.${bgClass}`).classList.add('active');
+        }
+        function selectLocalBg() {
+            document.getElementById('local-bg').click();
+        }
+        function setLocalBg(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const bgUrl = URL.createObjectURL(file);
+            playerScreen.classList.remove('bg1', 'bg2', 'bg3', 'bg4');
+            playerScreen.style.background = `url(${bgUrl}) no-repeat center/cover`;
+            playerConfig.bgType = 'image';
+            playerConfig.bgValue = bgUrl;
+            document.querySelectorAll('.bg-color').forEach(bg => bg.classList.remove('active'));
+            hideAddModal();
+            input.value = '';
+        }
+
+        // 9. 歌单渲染（原有逻辑不变）
+        function renderPlaylist() {
+            const playlistDom = document.getElementById('playlist');
+            playlistDom.innerHTML = '';
+            if (songList.length === 0) {
+                playlistDom.innerHTML = `
+                    <div style="text-align:center; padding:20px; color:#999; font-size:13px;">
+                        歌单空空的～ 添加歌曲吧～
+                    </div>
+                `;
+                return;
+            }
+            songList.forEach((song, index) => {
+                const songItem = document.createElement('div');
+                songItem.className = 'song-item';
+                songItem.onclick = () => playSong(index);
+                songItem.innerHTML = `
+                    <div class="song-cover">🎵</div>
+                    <div class="song-info">
+                        <div class="song-name">${song.name}</div>
+                        <div class="song-singer">${song.singer}</div>
+                    </div>
+                `;
+                playlistDom.appendChild(songItem);
+            });
+        }
+
+        // 10. 播放控制（核心：基于全局Audio，同步存储状态）
+        function playSong(index) {
+            if (index === currentSongIndex && !globalAudio.paused) {
+                togglePlay();
+                return;
+            }
+            currentSongIndex = index;
+            const song = songList[index];
+            // 用全局Audio播放，而非页面内隐藏的audio
+            globalAudio.src = song.url;
+            globalAudio.play().catch(err => console.log('播放失败', err));
+            // 更新界面和配置
+            nowPlayingName.textContent = song.name;
+            nowPlayingSinger.textContent = song.singer;
+            nowPlayingCover.textContent = '▶';
+            playBtn.textContent = '⏸';
+            playerConfig.currentSongId = song.id;
+            playerConfig.isPlaying = true;
+            saveToLocal(); // 同步到存储，供桌面页读取
+        }
+
+        function togglePlay() {
+            if (currentSongIndex === -1 && songList.length > 0) {
+                playSong(0);
+                return;
+            }
+            // 控制全局Audio的播放/暂停
+            if (globalAudio.paused) {
+                globalAudio.play();
+                playBtn.textContent = '⏸';
+                nowPlayingCover.textContent = '▶';
+                playerConfig.isPlaying = true;
+            } else {
+                globalAudio.pause();
+                playBtn.textContent = '▶';
+                nowPlayingCover.textContent = '⏸';
+                playerConfig.isPlaying = false;
+            }
+            saveToLocal(); // 同步状态到存储
+        }
+
+        function playPrevSong() {
+            if (songList.length === 0) return;
+            currentSongIndex = (currentSongIndex - 1 + songList.length) % songList.length;
+            playSong(currentSongIndex);
+        }
+
+        function playNextSong() {
+            if (songList.length === 0) return;
+            currentSongIndex = (currentSongIndex + 1) % songList.length;
+            playSong(currentSongIndex);
+        }
+
+        // 11. 页面关闭前同步状态（避免意外停止）
+        window.addEventListener('beforeunload', () => {
+            saveToLocal();
+            // 不暂停全局Audio，实现跳转后继续播放
+        });
+
+        // 12. 监听存储变化（同步桌面页操作）
+        window.addEventListener('storage', (e) => {
+            if (e.key === STORAGE_KEY) {
+                const savedData = JSON.parse(e.newValue);
+                songList = savedData.songList;
+                playerConfig = savedData.config;
+                // 同步全局Audio状态
+                if (playerConfig.currentSongId !== -1) {
+                    const targetSong = songList.find(song => song.id === playerConfig.currentSongId);
+                    if (targetSong) {
+                        currentSongIndex = songList.indexOf(targetSong);
+                        globalAudio.src = targetSong.url;
+                        if (playerConfig.isPlaying) {
+                            globalAudio.play().catch(err => console.log('同步播放失败', err));
+                            playBtn.textContent = '⏸';
+                            nowPlayingCover.textContent = '▶';
+                        } else {
+                            globalAudio.pause();
+                            playBtn.textContent = '▶';
+                            nowPlayingCover.textContent = '⏸';
+                        }
+                    }
+                }
+                renderPlaylist();
+                restoreBackground();
+            }
+        });
+    </script>
+</body>
+</html>
+
+

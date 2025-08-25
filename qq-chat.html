@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>聊天界面 - 可爱QQ</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "PingFang SC", "微软雅黑", sans-serif;
+    }
+    body {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f5f5f5;
+    }
+    /* 手机容器 */
+    .phone-screen {
+      width: 375px;
+      height: 812px;
+      border: 1px solid #eee;
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    /* 返回键 */
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 36px;
+      height: 36px;
+      background: #f8dce8;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(255,182,193,0.3);
+      z-index: 999;
+    }
+    .back-btn::after {
+      content: '';
+      width: 14px;
+      height: 14px;
+      border-top: 2px solid #ffabb8;
+      border-left: 2px solid #ffabb8;
+      transform: rotate(-45deg);
+    }
+    /* 聊天标题栏 */
+    .chat-header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 990;
+    }
+    .chat-name {
+      font-size: 16px;
+      color: #333;
+      font-weight: bold;
+    }
+    /* 右上角三条杠（黑色，可见） */
+    .more-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      z-index: 995;
+    }
+    .more-btn span {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #000; /* 改为黑色 */
+    }
+    /* 聊天背景 */
+    .chat-bg {
+      position: absolute;
+      top: 60px;
+      left: 0;
+      width: 100%;
+      height: calc(100% - 120px);
+      background: #f0f8ff;
+      z-index: 980;
+    }
+    .chat-bg img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.3;
+    }
+    /* 聊天内容区 */
+    .chat-container {
+      position: absolute;
+      top: 60px;
+      left: 0;
+      width: 100%;
+      height: calc(100% - 120px);
+      padding: 15px;
+      overflow-y: auto;
+      z-index: 985;
+    }
+    /* 消息容器：带头像排版 */
+    .msg-container {
+      display: flex;
+      margin-bottom: 15px;
+    }
+    /* 他人消息：头像在左 */
+    .other-msg-container {
+      align-items: flex-start;
+    }
+    /* 自己消息：头像在右 */
+    .self-msg-container {
+      flex-direction: row-reverse;
+      align-items: flex-start;
+    }
+    /* 消息头像 */
+    .msg-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      overflow: hidden;
+      margin: 0 8px;
+      flex-shrink: 0;
+    }
+    .msg-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    /* 消息气泡样式（真实QQ色+带头像） */
+    .msg-bubble {
+      max-width: 70%;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 14px;
+      line-height: 1.5;
+      position: relative;
+    }
+    .other-msg {
+      background: #fff;
+      color: #333;
+      border-bottom-left-radius: 3px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .self-msg {
+      background: #0084ff;
+      color: #fff;
+      border-bottom-right-radius: 3px;
+    }
+    /* 消息时间 */
+    .msg-time {
+      font-size: 10px;
+      margin-top: 5px;
+      text-align: right;
+      opacity: 0.7;
+    }
+    /* 特殊消息卡片（转账/红包/音乐） */
+    .special-msg-card {
+      max-width: 70%;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      margin-bottom: 15px;
+    }
+    .transfer-card {
+      border-left: 4px solid #0084ff; /* 蓝色转账卡片 */
+    }
+    .redpacket-card {
+      border-left: 4px solid #ff5252; /* 红色红包卡片 */
+    }
+    .music-card {
+      border-left: 4px solid #2ecc71; /* 绿色音乐卡片 */
+    }
+    .card-header {
+      padding: 10px 15px;
+      font-size: 14px;
+      color: #333;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .card-body {
+      padding: 15px;
+      font-size: 14px;
+      color: #333;
+    }
+    .transfer-amount, .redpacket-amount {
+      font-size: 20px;
+      color: #0084ff;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    .music-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .music-cover {
+      width: 40px;
+      height: 40px;
+      border-radius: 5px;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #666;
+    }
+    .music-text {
+      flex: 1;
+    }
+    .music-name {
+      font-size: 14px;
+      color: #333;
+    }
+    .music-singer {
+      font-size: 12px;
+      color: #999;
+    }
+    .play-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #0084ff;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    /* 消息长按菜单（适配宽度） */
+    .msg-menu {
+      position: absolute;
+      bottom: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff;
+      border-radius: 5px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      z-index: 999;
+      display: none;
+      white-space: nowrap; /* 自适应文字宽度 */
+    }
+    .msg-menu-item {
+      padding: 5px 10px;
+      font-size: 12px;
+      color: #333;
+      cursor: pointer;
+      display: inline-block;
+    }
+    .msg-menu-item:hover {
+      background: #f5f5f5;
+    }
+    /* 输入区：支持语音切换 */
+    .input-area {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      padding: 0 15px;
+      z-index: 990;
+    }
+    .func-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #666;
+      font-size: 20px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    /* 文字输入框 */
+    .chat-input {
+      flex: 1;
+      height: 36px;
+      padding: 0 15px;
+      border: 1px solid #f5f5f5;
+      border-radius: 18px;
+      outline: none;
+      font-size: 14px;
+    }
+    /* 语音输入框 */
+    .voice-input {
+      flex: 1;
+      height: 36px;
+      padding: 0 15px;
+      border: 1px solid #0084ff;
+      border-radius: 18px;
+      background: #e8f4fd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0084ff;
+      font-size: 14px;
+    }
+    .voice-tip {
+      color: #0084ff;
+      font-size: 14px;
+    }
+    .switch-text-btn {
+      width: 60px;
+      height: 36px;
+      background: #f5f5f5;
+      color: #666;
+      border: none;
+      border-radius: 18px;
+      margin-left: 10px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .send-btn {
+      width: 60px;
+      height: 36px;
+      background: #0084ff;
+      color: #fff;
+      border: none;
+      border-radius: 18px;
+      margin-left: 10px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    /* 功能弹窗 */
+    .func-modal {
+      position: absolute;
+      bottom: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      background: #fff;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      padding: 15px;
+      z-index: 1000;
+      display: none;
+    }
+    .func-modal.active {
+      display: block;
+    }
+    .func-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+    }
+    .func-item {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: #666;
+      cursor: pointer;
+    }
+    .func-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 20px;
+      color: #0084ff;
+    }
+    /* 表情包弹窗 */
+    .emoji-modal {
+      position: absolute;
+      bottom: 70px;
+      left: 0;
+      width: 100%;
+      height: 200px;
+      background: #fff;
+      border-top-left-radius: 15px;
+      border-top-right-radius: 15px;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      padding: 15px;
+      overflow-y: auto;
+      z-index: 1000;
+      display: none;
+    }
+    .emoji-modal.active {
+      display: block;
+    }
+    .emoji-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .emoji-title {
+      font-size: 14px;
+      color: #333;
+      font-weight: bold;
+    }
+    .add-emoji-btn {
+      padding: 5px 10px;
+      background: #0084ff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .emoji-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 10px;
+    }
+    .emoji-item {
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .emoji-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 5px;
+    }
+    .empty-emoji {
+      width: 100%;
+      height: 150px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #999;
+      font-size: 14px;
+    }
+    /* 音乐选择弹窗 */
+    .music-modal {
+      position: absolute;
+      bottom: 70px;
+      left: 0;
+      width: 100%;
+      height: 200px;
+      background: #fff;
+      border-top-left-radius: 15px;
+      border-top-right-radius: 15px;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      padding: 15px;
+      overflow-y: auto;
+      z-index: 1000;
+      display: none;
+    }
+    .music-modal.active {
+      display: block;
+    }
+    .music-title {
+      font-size: 14px;
+      color: #333;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .music-item {
+      padding: 8px 0;
+      border-bottom: 1px solid #f5f5f5;
+      font-size: 14px;
+      color: #333;
+      cursor: pointer;
+    }
+    .music-item:hover {
+      background: #f5f5f5;
+    }
+    /* 转账/红包弹窗（蓝色风格） */
+    .transfer-modal, .redpacket-modal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      background: #fff;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      padding: 20px;
+      z-index: 1000;
+      display: none;
+    }
+    .transfer-modal.active, .redpacket-modal.active {
+      display: block;
+    }
+    .modal-header {
+      font-size: 16px;
+      color: #333;
+      font-weight: bold;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    .transfer-modal .modal-header {
+      color: #0084ff; /* 转账标题蓝色 */
+    }
+    .redpacket-modal .modal-header {
+      color: #ff5252; /* 红包标题红色 */
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-label {
+      display: block;
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+    .amount-input, .remark-input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #f5f5f5;
+      border-radius: 8px;
+      font-size: 16px;
+      outline: none;
+    }
+    .amount-input {
+      text-align: center;
+      color: #0084ff;
+      font-weight: bold;
+    }
+    .confirm-btn {
+      width: 100%;
+      padding: 12px;
+      background: #0084ff; /* 转账确认按钮蓝色 */
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .redpacket-modal .confirm-btn {
+      background: #ff5252; /* 红包确认按钮红色 */
+    }
+    .cancel-btn {
+      width: 100%;
+      padding: 12px;
+      background: #f5f5f5;
+      color: #666;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    /* 联系人设置页面（新增拉黑按钮） */
+    .contact-setting-page {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #fff;
+      z-index: 1000;
+      display: none;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .contact-setting-page.active {
+      display: block;
+    }
+    .setting-header {
+      font-size: 18px;
+      color: #333;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .setting-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #eee;
+      overflow: hidden;
+      margin: 0 auto 15px;
+    }
+    .setting-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .setting-item {
+      margin-bottom: 15px;
+    }
+    .setting-label {
+      font-size: 14px;
+      color: #999;
+      margin-bottom: 5px;
+    }
+    .setting-input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #f5f5f5;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+    }
+    .setting-select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #f5f5f5;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      background: #fff;
+    }
+    .delete-btn {
+      width: 100%;
+      padding: 12px;
+      background: #ff4d4f;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    /* 拉黑按钮样式 */
+    .block-btn {
+      width: 100%;
+      padding: 12px;
+      background: #ff5252;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .unblock-btn {
+      background: #4CAF50;
+    }
+    /* 拉黑提示 */
+    .block-tip {
+      padding: 8px;
+      background: #ffebee;
+      color: #ff5252;
+      border-radius: 5px;
+      font-size: 12px;
+      text-align: center;
+      margin-top: 5px;
+      display: none;
+    }
+    .block-tip.active {
+      display: block;
+    }
+    /* 隐藏原生文件选择器 */
+    #emoji-upload, #setting-avatar-upload, #setting-bg-upload {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-screen">
+    <!-- 返回键 -->
+    <div class="back-btn" onclick="backToContactDetail()"></div>
+    <!-- 聊天标题栏 -->
+    <div class="chat-header">
+      <div class="chat-name" id="chatName">联系人名称</div>
+    </div>
+    <!-- 右上角三条杠（黑色） -->
+    <div class="more-btn" onclick="toggleContactSetting()"></div>
+    <!-- 聊天背景 -->
+    <div class="chat-bg" id="chatBg">
+      <img src="app.img/default-bg.jpg" alt="聊天背景">
+    </div>
+    <!-- 聊天内容区 -->
+    <div class="chat-container" id="chatContainer">
+      <div style="text-align:center; color:#999; font-size:12px; margin-top:50%;">
+        开始聊天吧～
+      </div>
+    </div>
+    <!-- 输入区（支持文字/语音切换） -->
+    <div class="input-area">
+      <div class="func-btn" onclick="toggleFuncModal()">+</div>
+      <!-- 文字输入框（默认显示） -->
+      <input type="text" class="chat-input" id="chatInput" placeholder="输入消息...">
+      <!-- 语音输入框（默认隐藏） -->
+      <div class="voice-input" id="voiceInput" style="display:none;" onmousedown="startRecord()" onmouseup="stopRecord()" onmouseleave="stopRecord()">
+        <span class="voice-tip">长按录音</span>
+      </div>
+      <!-- 语音/文字切换按钮（默认隐藏） -->
+      <button class="switch-text-btn" id="switchTextBtn" style="display:none;" onclick="switchToTextInput()">文字</button>
+      <button class="send-btn" id="sendBtn" onclick="sendMsg()">发送</button>
+      <!-- 语音按钮（默认显示） -->
+      <button class="send-btn" id="voiceBtn" onclick="switchToVoiceInput()">语音</button>
+    </div>
+    <!-- 1. 功能弹窗 -->
+    <div class="func-modal" id="funcModal">
+      <div class="func-grid">
+        <div class="func-item" onclick="toggleEmojiModal()">
+          <div class="func-icon">😀</div>
+          <div>表情包</div>
+        </div>
+        <div class="func-item" onclick="toggleTransferModal()">
+          <div class="func-icon">💸</div>
+          <div>转账</div>
+        </div>
+        <div class="func-item" onclick="toggleRedpacketModal()">
+          <div class="func-icon">🧧</div>
+          <div>红包</div>
+        </div>
+        <div class="func-item" onclick="switchToVoiceInput()">
+          <div class="func-icon">🎤</div>
+          <div>语音</div>
+        </div>
+        <div class="func-item" onclick="toggleMusicModal()">
+          <div class="func-icon">🎵</div>
+          <div>分享音乐</div>
+        </div>
+      </div>
+    </div>
+    <!-- 2. 表情包弹窗 -->
+    <div class="emoji-modal" id="emojiModal">
+      <div class="emoji-header">
+        <div class="emoji-title">表情包</div>
+        <button class="add-emoji-btn" onclick="document.getElementById('emoji-upload').click()">添加表情包</button>
+        <input type="file" id="emoji-upload" accept="image/*" onchange="addEmoji(this)">
+      </div>
+      <div class="emoji-grid" id="emojiGrid">
+        <div class="empty-emoji" id="emptyEmojiTip">暂无表情包，点击添加～</div>
+      </div>
+    </div>
+    <!-- 3. 音乐选择弹窗 -->
+    <div class="music-modal" id="musicModal">
+      <div class="music-title">选择音乐</div>
+      <div id="musicList" class="music-list">
+        <!-- 动态渲染音乐列表 -->
+      </div>
+    </div>
+    <!-- 4. 转账弹窗（蓝色风格） -->
+    <div class="transfer-modal" id="transferModal">
+      <div class="modal-header">转账给 ${document.getElementById('chatName').textContent || '联系人'}</div>
+      <div class="form-group">
+        <label class="form-label">金额（元）</label>
+        <input type="number" class="amount-input" id="transferAmount" placeholder="0.00" min="0.01" step="0.01" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">备注（可选）</label>
+        <input type="text" class="remark-input" id="transferRemark" placeholder="输入备注">
+      </div>
+      <button class="confirm-btn" onclick="confirmTransfer()">确认转账</button>
+      <button class="cancel-btn" onclick="toggleTransferModal()">取消</button>
+    </div>
+    <!-- 5. 红包弹窗 -->
+    <div class="redpacket-modal" id="redpacketModal">
+      <div class="modal-header">发红包给 ${document.getElementById('chatName').textContent || '联系人'}</div>
+      <div class="form-group">
+        <label class="form-label">金额（元）</label>
+        <input type="number" class="amount-input" id="redpacketAmount" placeholder="0.00" min="0.01" step="0.01" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">留言（可选）</label>
+        <input type="text" class="remark-input" id="redpacketRemark" placeholder="恭喜发财，大吉大利">
+      </div>
+      <button class="confirm-btn" onclick="confirmRedpacket()">确认发送</button>
+      <button class="cancel-btn" onclick="toggleRedpacketModal()">取消</button>
+    </div>
+    <!-- 6. 消息长按菜单 -->
+    <div class="msg-menu" id="msgMenu">
+      <div class="msg-menu-item" onclick="traceMsg()">回溯</div>
+      <div class="msg-menu-item" onclick="editMsg()">编辑</div>
+      <div class="msg-menu-item" onclick="deleteMsg()">删除</div>
+    </div>
+    <!-- 7. 联系人设置页面（新增拉黑按钮） -->
+    <div class="contact-setting-page" id="contactSettingPage">
+      <div class="setting-header">联系人设置</div>
+      <!-- 头像设置 -->
+      <div class="setting-item">
+        <div class="setting-label">头像</div>
+        <div class="setting-avatar" onclick="document.getElementById('setting-avatar-upload').click()">
+          <img id="settingAvatarImg" src="app.img/default-contact.png" alt="联系人头像">
+        </div>
+        <input type="file" id="setting-avatar-upload" accept="image/*" onchange="updateSettingAvatar(this)">
+      </div>
+      <!-- 名称设置 -->
+      <div class="setting-item">
+        <div class="setting-label">名称</div>
+        <input type="text" class="setting-input" id="settingName" placeholder="输入联系人名称">
+      </div>
+      <!-- 背景设置 -->
+      <div class="setting-item">
+        <div class="setting-label">聊天背景</div>
+        <div class="setting-avatar" style="width: 100px; height: 50px; border-radius: 8px;" onclick="document.getElementById('setting-bg-upload').click()">
+          <img id="settingBgImg" src="app.img/default-bg.jpg" alt="聊天背景">
+        </div>
+        <input type="file" id="setting-bg-upload" accept="image/*" onchange="updateSettingBg(this)">
+      </div>
+      <!-- 人设设置 -->
+      <div class="setting-item">
+        <div class="setting-label">人设</div>
+        <input type="text" class="setting-input" id="settingPersona" placeholder="输入联系人角色设定">
+      </div>
+      <!-- API选择 -->
+      <div class="setting-item">
+        <div class="setting-label">API选择</div>
+        <select class="setting-select" id="settingApiSelect">
+          <option value="-1">请选择API</option>
+        </select>
+      </div>
+      <!-- 拉黑按钮 -->
+      <button class="block-btn" id="blockBtn" onclick="toggleBlockContact()">拉黑该联系人</button>
+      <!-- 操作按钮 -->
+      <button class="delete-btn" onclick="deleteAllChatLogs()">删除所有聊天记录</button>
+      <button class="delete-btn" onclick="deleteContact()" style="margin-top: 10px;">删除联系人</button>
+      <button class="cancel-btn" onclick="toggleContactSetting()">保存并返回</button>
+    </div>
+  </div>
+  <script>
+    // 本地存储Key
+    const STORAGE_KEYS = {
+      QQ: 'qqConfig',
+      MUSIC: 'musicPlayerConfig',
+      EMOJI: 'qqEmojiStorage',
+      API: 'apiManagerConfigs',
+      IMAGE: 'qqImageStorage'
+    };
+    // 全局状态
+    let currentChatId = -1;
+    let currentContact = null;
+    let selectedMsgId = -1;
+    let emojiList = [];
+    let isVoiceInput = false; // 语音输入状态
+    let isRecording = false; // 录音状态
+    let globalAudio = new Audio(); // 音乐播放对象
+
+    // 页面初始化
+    window.onload = initChatPage();
+
+    // 1. 初始化聊天页面（修复图片本地保存）
+    async function initChatPage() {
+      // 获取当前聊天ID
+      currentChatId = localStorage.getItem('currentChatContactId');
+      if (!currentChatId) {
+        backToQQMain();
+        return;
+      }
+      currentChatId = parseInt(currentChatId);
+
+      // 加载QQ配置
+      const savedQQ = localStorage.getItem(STORAGE_KEYS.QQ);
+      if (!savedQQ) {
+        backToQQMain();
+        return;
+      }
+      const qqConfig = JSON.parse(savedQQ);
+      currentContact = qqConfig.contacts.find(contact => contact.id === currentChatId);
+      if (!currentContact) {
+        backToQQMain();
+        return;
+      }
+      // 初始化默认值
+      if (!currentContact.chatLogs) currentContact.chatLogs = [];
+      if (currentContact.isBlocked === undefined) currentContact.isBlocked = false;
+
+      // 恢复图片（从imageMap读取Base64）
+      if (qqConfig.imageMap) {
+        // 恢复联系人头像/背景
+        if (currentContact.avatar && qqConfig.imageMap[currentContact.avatar]) {
+          currentContact.avatar = qqConfig.imageMap[currentContact.avatar];
+        }
+        if (currentContact.bg && qqConfig.imageMap[currentContact.bg]) {
+          currentContact.bg = qqConfig.imageMap[currentContact.bg];
+        }
+        // 恢复聊天记录中的图片
+        currentContact.chatLogs.forEach(log => {
+          if (log.media?.url && qqConfig.imageMap[log.media.url]) {
+            log.media.url = qqConfig.imageMap[log.media.url];
+          }
+          if (log.emojiUrl && qqConfig.imageMap[log.emojiUrl]) {
+            log.emojiUrl = qqConfig.imageMap[log.emojiUrl];
+          }
+        });
+      }
+
+      // 加载表情包
+      const savedEmoji = localStorage.getItem(STORAGE_KEYS.EMOJI);
+      emojiList = savedEmoji ? JSON.parse(savedEmoji) : [];
+      renderEmojiGrid();
+
+      // 渲染基础信息
+      renderChatBaseInfo();
+      // 渲染聊天记录
+      renderChatLogs();
+      // 渲染音乐列表
+      renderMusicList();
+      // 渲染API列表
+      renderApiSelect();
+      // 更新拉黑按钮状态
+      updateBlockBtnStatus();
+    }
+
+    // 2. 渲染聊天基础信息
+    function renderChatBaseInfo() {
+      // 标题
+      document.getElementById('chatName').textContent = currentContact.name;
+      // 背景
+      const chatBg = document.getElementById('chatBg');
+      chatBg.innerHTML = `<img src="${currentContact.bg || 'app.img/default-bg.jpg'}" alt="聊天背景">`;
+      // 设置页初始值
+      document.getElementById('settingAvatarImg').src = currentContact.avatar || 'app.img/default-contact.png';
+      document.getElementById('settingName').value = currentContact.name;
+      document.getElementById('settingBgImg').src = currentContact.bg || 'app.img/default-bg.jpg';
+      document.getElementById('settingPersona').value = currentContact.setting || '';
+    }
+
+    // 3. 图片转Base64（持久化核心）
+    function imageToBase64(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // 4. 表情包功能（修复本地保存）
+    async function addEmoji(input) {
+      const file = input.files[0];
+      if (!file) return;
+      // 转Base64
+      const base64Url = await imageToBase64(file);
+      const emoji = {
+        id: Date.now(),
+        url: base64Url,
+        fileName: file.name
+      };
+      // 添加到列表并持久化
+      emojiList.push(emoji);
+      localStorage.setItem(STORAGE_KEYS.EMOJI, JSON.stringify(emojiList));
+      // 同步到QQ配置的imageMap
+      const savedQQ = localStorage.getItem(STORAGE_KEYS.QQ);
+      const qqConfig = savedQQ ? JSON.parse(savedQQ) : { imageMap: {} };
+      qqConfig.imageMap[emoji.id] = base64Url;
+      localStorage.setItem(STORAGE_KEYS.QQ, JSON.stringify(qqConfig));
+      // 重新渲染
+      renderEmojiGrid();
+      input.value = '';
+    }
+
+    function renderEmojiGrid() {
+      const emojiGrid = document.getElementById('emojiGrid');
+      const emptyTip = document.getElementById('emptyEmojiTip');
+
+      if (emojiList.length === 0) {
+        emptyTip.style.display = 'flex';
+        emojiGrid.innerHTML = '';
+        emojiGrid.appendChild(emptyTip);
+        return;
+      }
+
+      emptyTip.style.display = 'none';
+      let html = '';
+      emojiList.forEach(emoji => {
+        html += `
+          <div class="emoji-item" onclick="sendEmoji(${emoji.id})">
+            <img src="${emoji.url}" alt="表情包">
+          </div>
+        `;
+      });
+      emojiGrid.innerHTML = html;
+    }
+
+    // 发送表情包（无气泡，纯图片）
+    async function sendEmoji(emojiId) {
+      const emoji = emojiList.find(e => e.id === emojiId);
+      if (!emoji) return;
+
+      // 创建表情包消息
+      const emojiMsg = {
+        id: Date.now(),
+        type: 'emoji',
+        emojiUrl: emoji.url,
+        time: new Date().toISOString(),
+        isUser: true
+      };
+      currentContact.chatLogs.push(emojiMsg);
+      saveQQConfig();
+      renderChatLogs();
+
+      // 关闭表情包弹窗
+      document.getElementById('emojiModal').classList.remove('active');
+    }
+
+    // 5. 语音输入功能
+    function switchToVoiceInput() {
+      isVoiceInput = true;
+      // 显示语音输入框，隐藏文字输入框
+      document.getElementById('chatInput').style.display = 'none';
+      document.getElementById('voiceInput').style.display = 'flex';
+      // 显示文字切换按钮，隐藏发送/语音按钮
+      document.getElementById('sendBtn').style.display = 'none';
+      document.getElementById('voiceBtn').style.display = 'none';
+      document.getElementById('switchTextBtn').style.display = 'block';
+    }
+
+    function switchToTextInput() {
+      isVoiceInput = false;
+      // 显示文字输入框，隐藏语音输入框
+      document.getElementById('voiceInput').style.display = 'none';
+      document.getElementById('chatInput').style.display = 'block';
+      // 显示发送/语音按钮，隐藏文字切换按钮
+      document.getElementById('sendBtn').style.display = 'block';
+      document.getElementById('voiceBtn').style.display = 'block';
+      document.getElementById('switchTextBtn').style.display = 'none';
+      // 停止录音（防止误触）
+      if (isRecording) stopRecord();
+    }
+
+    function startRecord() {
+      isRecording = true;
+      document.querySelector('.voice-tip').textContent = '正在录音...';
+      // 模拟录音（实际项目需对接录音API）
+    }
+
+    function stopRecord() {
+      if (!isRecording) return;
+      isRecording = false;
+      document.querySelector('.voice-tip').textContent = '长按录音';
+      // 模拟发送语音消息
+      const voiceMsg = {
+        id: Date.now(),
+        type: 'voice',
+        content: '语音消息（3秒）',
+        time: new Date().toISOString(),
+        isUser: true
+      };
+      currentContact.chatLogs.push(voiceMsg);
+      saveQQConfig();
+      renderChatLogs();
+
+      // 模拟AI回复
+      setTimeout(() => {
+        const aiVoiceMsg = {
+          id: Date.now() + 1,
+          type: 'voice',
+          content: '收到你的语音消息啦～',
+          time: new Date().toISOString(),
+          isUser: false
+        };
+        currentContact.chatLogs.push(aiVoiceMsg);
+        saveQQConfig();
+        renderChatLogs();
+      }, 1000);
+    }
+
+    // 6. 转账功能（蓝色卡片）
+    function toggleTransferModal() {
+      const modal = document.getElementById('transferModal');
+      modal.classList.toggle('active');
+    }
+
+    async function confirmTransfer() {
+      const amount = parseFloat(document.getElementById('transferAmount').value);
+      const remark = document.getElementById('transferRemark').value.trim();
+      if (isNaN(amount) || amount <= 0) {
+        alert('请输入有效的转账金额！');
+        return;
+      }
+
+      // 创建转账消息（卡片形式）
+      const transferMsg = {
+        id: Date.now(),
+        type: 'transfer',
+        amount: amount,
+        remark: remark,
+        time: new Date().toISOString(),
+        isUser: true
+      };
+      currentContact.chatLogs.push(transferMsg);
+      saveQQConfig();
+      renderChatLogs();
+
+      // 提示并关闭弹窗
+      alert(`转账 ${amount} 元给 ${currentContact.name} 成功！`);
+      toggleTransferModal();
+      document.getElementById('transferAmount').value = '';
+      document.getElementById('transferRemark').value = '';
+
+      // 模拟AI收款回复
+      setTimeout(() => {
+        const aiReply = {
+          id: Date.now() + 1,
+          type: 'text',
+          content: `已收到你的 ${amount} 元转账${remark ? '，备注：' + remark : ''}`,
+          time: new Date().toISOString(),
+          isUser: false
+        };
+        currentContact.chatLogs.push(aiReply);
+        saveQQConfig();
+        renderChatLogs();
+      }, 1000);
+    }
+
+    // 7. 红包功能（红色卡片）
+    function toggleRedpacketModal() {
+      const modal = document.getElementById('redpacketModal');
+      modal.classList.toggle('active');
+    }
+
+    async function confirmRedpacket() {
+      const amount = parseFloat(document.getElementById('redpacketAmount').value);
+      const remark = document.getElementById('redpacketRemark').value.trim() || '恭喜发财，大吉大利';
+      if (isNaN(amount) || amount <= 0) {
+        alert('请输入有效的红包金额！');
+        return;
+      }
+
+      // 创建红包消息（卡片形式）
+      const redpacketMsg = {
+        id: Date.now(),
+        type: 'redpacket',
+        amount: amount,
+        remark: remark,
+        time: new Date().toISOString(),
+        isUser: true
+      };
+      currentContact.chatLogs.push(redpacketMsg);
+      saveQQConfig();
+      renderChatLogs();
+
+      // 提示并关闭弹窗
+      alert(`给 ${currentContact.name} 发送 ${amount} 元红包成功！`);
+      toggleRedpacketModal();
+      document.getElementById('redpacketAmount').value = '';
+      document.getElementById('redpacketRemark').value = '';
+
+      // 模拟AI抢红包回复
+      setTimeout(() => {
+        const aiReply = {
+          id: Date.now() + 1,
+          type: 'text',
+          content: `已领取你的红包，金额 ${amount} 元，谢谢～`,
+          time: new Date().toISOString(),
+          isUser: false
+        };
+        currentContact.chatLogs.push(aiReply);
+        saveQQConfig();
+        renderChatLogs();
+      }, 1000);
+    }
+
+    // 8. 音乐分享功能（卡片+播放）
+    function renderMusicList() {
+      const musicList = document.getElementById('musicList');
+      const savedMusic = localStorage.getItem(STORAGE_KEYS.MUSIC);
+      if (!savedMusic) {
+        musicList.innerHTML = `<div style="text-align:center; color:#999; font-size:12px; padding:10px;">暂无音乐</div>`;
+        return;
+      }
+
+      const { songList } = JSON.parse(savedMusic);
+      if (songList.length === 0) {
+        musicList.innerHTML = `<div style="text-align:center; color:#999; font-size:12px; padding:10px;">暂无音乐</div>`;
+        return;
+      }
+
+      let html = '';
+      songList.forEach(song => {
+        html += `<div class="music-item" onclick="shareMusic('${song.name}', '${song.singer}', '${song.url}')">${song.name} - ${song.singer}</div>`;
+      });
+      musicList.innerHTML = html;
+    }
+
+    function shareMusic(musicName, musicSinger, musicUrl) {
+      // 创建音乐消息（卡片形式）
+      const musicMsg = {
+        id: Date.now(),
+        type: 'music',
+        musicName: musicName,
+        musicSinger: musicSinger,
+        musicUrl: musicUrl,
+        time: new Date().toISOString(),
+        isUser: true
+      };
+      currentContact.chatLogs.push(musicMsg);
+      saveQQConfig();
+      renderChatLogs();
+
+      // 关闭音乐弹窗
+      document.getElementById('musicModal').classList.remove('active');
+    }
+
+    // 播放音乐
+    function playMusic(musicUrl) {
+      if (globalAudio.src === musicUrl && !globalAudio.paused) {
+        globalAudio.pause();
+        return;
+      }
+      globalAudio.src = musicUrl;
+      globalAudio.play().catch(err => console.log('播放失败', err));
+    }
+
+    // 9. 消息长按菜单（适配宽度）
+    function showMsgMenu(event, msgId) {
+      event.preventDefault();
+      selectedMsgId = msgId;
+      const msgMenu = document.getElementById('msgMenu');
+      const msgBubble = event.target.closest('.msg-bubble, .special-msg-card, .emoji-item');
+      if (!msgBubble) return;
+
+      // 定位到气泡下方，宽度适配文字
+      const bubbleRect = msgBubble.getBoundingClientRect();
+      const screenRect = document.querySelector('.phone-screen').getBoundingClientRect();
+      msgMenu.style.left = `${bubbleRect.left - screenRect.left + bubbleRect.width/2 - msgMenu.offsetWidth/2}px`;
+      msgMenu.style.top = `${bubbleRect.bottom - screenRect.top}px`;
+      msgMenu.style.display = 'block';
+    }
+
+    // 消息编辑（支持用户和AI消息）
+    function editMsg() {
+      const chatLogs = currentContact.chatLogs;
+      const targetMsg = chatLogs.find(log => log.id === selectedMsgId);
+      if (!targetMsg) return;
+
+      // 不同类型消息编辑逻辑
+      let newContent = '';
+      if (targetMsg.type === 'text') {
+        newContent = prompt('编辑消息', targetMsg.content);
+        if (newContent !== null && newContent.trim() !== '') {
+          targetMsg.content = newContent;
+        }
+      } else if (targetMsg.type === 'transfer' || targetMsg.type === 'redpacket') {
+        newContent = prompt('编辑备注', targetMsg.remark || '');
+        if (newContent !== null) {
+          targetMsg.remark = newContent;
+        }
+      } else if (targetMsg.type === 'music') {
+        newContent = prompt('编辑音乐名称', targetMsg.musicName);
+        if (newContent !== null && newContent.trim() !== '') {
+          targetMsg.musicName = newContent;
+        }
+      }
+
+      if (newContent !== null) {
+        saveQQConfig();
+        renderChatLogs();
+      }
+      document.getElementById('msgMenu').style.display = 'none';
+    }
+
+    // 10. 拉黑功能
+    function toggleBlockContact() {
+      currentContact.isBlocked = !currentContact.isBlocked;
+      // 更新按钮状态
+      updateBlockBtnStatus();
+      // 提示
+      alert(currentContact.isBlocked ? '已拉黑该联系人，对方消息将被拒收' : '已取消拉黑，可正常接收消息');
+      saveQQConfig();
+    }
+
+    function updateBlockBtnStatus() {
+      const blockBtn = document.getElementById('blockBtn');
+      if (currentContact.isBlocked) {
+        blockBtn.textContent = '取消拉黑';
+        blockBtn.classList.add('unblock-btn');
+      } else {
+        blockBtn.textContent = '拉黑该联系人';
+        blockBtn.classList.remove('unblock-btn');
+      }
+    }
+
+    // 11. 渲染聊天记录（含所有消息类型+拉黑提示）
+    function renderChatLogs() {
+      const chatContainer = document.getElementById('chatContainer');
+      const chatLogs = currentContact.chatLogs;
+
+      if (chatLogs.length === 0) {
+        chatContainer.innerHTML = `
+          <div style="text-align:center; color:#999; font-size:12px; margin-top:50%;">
+            开始聊天吧～
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+           chatLogs.forEach(log => {
+        const timeStr = new Date(log.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        // 拉黑提示：AI消息显示红色感叹号
+        const blockTip = log.isUser === false && currentContact.isBlocked ? 
+          `<div class="block-tip active">对方拒绝接收你的消息</div>` : '';
+
+        // 1. 文本消息（带头像）
+        if (log.type === 'text' || !log.type) {
+          html += `
+            <div class="msg-container ${log.isUser ? 'self-msg-container' : 'other-msg-container'}">
+              <div class="msg-avatar">
+                <img src="${log.isUser ? qqConfig.userAvatar : currentContact.avatar || 'app.img/default-contact.png'}" alt="头像">
+              </div>
+              <div class="msg-bubble ${log.isUser ? 'self-msg' : 'other-msg'}" 
+                   data-msg-id="${log.id}" 
+                   oncontextmenu="showMsgMenu(event, ${log.id})">
+                <div>${log.content}</div>
+                <div class="msg-time">${timeStr}</div>
+              </div>
+            </div>
+            ${blockTip}
+          `;
+        }
+
+        // 2. 表情包消息（无气泡，纯图片）
+        else if (log.type === 'emoji') {
+          html += `
+            <div class="msg-container ${log.isUser ? 'self-msg-container' : 'other-msg-container'}">
+              <div class="msg-avatar">
+                <img src="${log.isUser ? qqConfig.userAvatar : currentContact.avatar || 'app.img/default-contact.png'}" alt="头像">
+              </div>
+              <div class="emoji-item" data-msg-id="${log.id}" oncontextmenu="showMsgMenu(event, ${log.id})">
+                <img src="${log.emojiUrl}" alt="表情包">
+                <div class="msg-time" style="text-align:${log.isUser ? 'right' : 'left'}; margin-top:5px; font-size:10px; opacity:0.7;">${timeStr}</div>
+              </div>
+            </div>
+            ${blockTip}
+          `;
+        }
+
+        // 3. 转账消息（蓝色卡片）
+        else if (log.type === 'transfer') {
+          html += `
+            <div class="${log.isUser ? 'self-msg-container' : 'other-msg-container'}" style="display:flex; margin-bottom:15px;">
+              <div class="msg-avatar">
+                <img src="${log.isUser ? qqConfig.userAvatar : currentContact.avatar || 'app.img/default-contact.png'}" alt="头像">
+              </div>
+              <div class="special-msg-card transfer-card" data-msg-id="${log.id}" oncontextmenu="showMsgMenu(event, ${log.id})">
+                <div class="card-header">转账</div>
+                <div class="card-body">
+                  <div>${log.remark || '无备注'}</div>
+                  <div class="transfer-amount">¥${log.amount.toFixed(2)}</div>
+                  <div style="font-size:12px; color:#999;">${timeStr}</div>
+                </div>
+              </div>
+            </div>
+            ${blockTip}
+          `;
+        }
+
+        // 4. 红包消息（红色卡片）
+        else if (log.type === 'redpacket') {
+          html += `
+            <div class="${log.isUser ? 'self-msg-container' : 'other-msg-container'}" style="display:flex; margin-bottom:15px;">
+              <div class="msg-avatar">
+                <img src="${log.isUser ? qqConfig.userAvatar : currentContact.avatar || 'app.img/default-contact.png'}" alt="头像">
+              </div>
+              <div class="special-msg-card redpacket-card" data-msg-id="${log.id}" oncontextmenu="showMsgMenu(event, ${log.id})">
+                <div class="card-header">红包</div>
+                <div class="card-body">
+                  <div>${log.remark}</div>
+                  <div class="redpacket-amount">¥${log.amount.toFixed(2)}</div>
+                  <div style="font-size:12px; color:#999;">${timeStr}</div>
+                </div>
+              </div>
+            </div>
+            ${blockTip}
+          `;
+        }
+
+        // 5. 音乐消息（绿色卡片+播放功能）
+        else if (log.type === 'music') {
+          html += `
+            <div class="${log.isUser ? 'self-msg-container' : 'other-msg-container'}" style="display:flex; margin-bottom:15px;">
+              <div class="msg-avatar">
+                <img src="${log.isUser ? qqConfig.userAvatar : currentContact.avatar || 'app.img/default-contact.png'}" alt="头像">
+              </div>
+              <div class="special-msg-card music-card" data-msg-id="${log.id}" oncontextmenu="showMsgMenu(event, ${log.id})">
+                <div class="card-header">音乐分享</div>
+                <div class="card-body">
+                  <div class="music-info">
+                    <div class="music-cover">🎵</div>
+                    <div class="music-text">
+                      <div class="music-name">${log.musicName}</div>
+                      <div class="music-singer">${log.musicSinger}</div>
+                    </div>
+                    <div class="play-btn" onclick="playMusic('${log.musicUrl}')">▶</div>
+                  </div>
+                  <div style="font-size:12px; color:#999; margin-top:10px;">${timeStr}</div>
+                </div>
+              </div>
+            </div>
+            ${blockTip}
+          `;
+        }
+
+        // 6. 语音消息
+        else if (log.type === 'voice') {
+          html += `
+            <div class="msg-container ${log.isUser ? 'self-msg-container' : 'other-msg-container'}">
+              <div class="msg-avatar">
+                <img src="${log.isUser ? qqConfig.userAvatar : currentContact.avatar || 'app.img/default-contact.png'}" alt="头像">
+              </div>
+              <div class="msg-bubble ${log.isUser ? 'self-msg' : 'other-msg'}" 
+                   data-msg-id="${log.id}" 
+                   oncontextmenu="showMsgMenu(event, ${log.id})">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <div>🎤 ${log.content}</div>
+                </div>
+                <div class="msg-time">${timeStr}</div>
+              </div>
+            </div>
+            ${blockTip}
+          `;
+        }
+      });
+
+      chatContainer.innerHTML = html;
+      // 滚动到底部
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    // 12. 保存QQ配置（含图片Base64）
+    function saveQQConfig() {
+      const savedQQ = localStorage.getItem(STORAGE_KEYS.QQ);
+      const qqConfig = savedQQ ? JSON.parse(savedQQ) : { contacts: [], moments: [], emojiList: [], imageMap: {} };
+      const contactIndex = qqConfig.contacts.findIndex(contact => contact.id === currentChatId);
+      if (contactIndex !== -1) {
+        qqConfig.contacts[contactIndex] = currentContact;
+      }
+      // 同步表情包到QQ配置
+      qqConfig.emojiList = emojiList;
+      localStorage.setItem(STORAGE_KEYS.QQ, JSON.stringify(qqConfig));
+      // 单独保存表情包
+      localStorage.setItem(STORAGE_KEYS.EMOJI, JSON.stringify(emojiList));
+    }
+
+    // 13. 其他原有函数（消息发送、回溯、删除等）
+    function sendMsg() {
+      if (isVoiceInput) return; // 语音模式下不触发文字发送
+      const input = document.getElementById('chatInput');
+      const content = input.value.trim();
+      if (!content) return;
+
+      // 检查是否被拉黑（用户发送时提示）
+      if (currentContact.isBlocked) {
+        alert('你已拉黑该联系人，消息无法发送');
+        return;
+      }
+
+      // 创建文本消息
+      const newMsg = {
+        id: Date.now(),
+        type: 'text',
+        content: content,
+        time: new Date().toISOString(),
+        isUser: true
+      };
+      currentContact.chatLogs.push(newMsg);
+      saveQQConfig();
+      renderChatLogs();
+      input.value = '';
+
+      // 模拟AI回复（拉黑状态下不回复）
+      if (!currentContact.isBlocked) {
+        setTimeout(() => {
+          const aiReply = {
+            id: Date.now() + 1,
+            type: 'text',
+            content: `收到你的消息：${content}`,
+            time: new Date().toISOString(),
+            isUser: false
+          };
+          currentContact.chatLogs.push(aiReply);
+          saveQQConfig();
+          renderChatLogs();
+        }, 1000);
+      }
+    }
+
+    function traceMsg() {
+      const chatLogs = currentContact.chatLogs;
+      const targetMsg = chatLogs.find(log => log.id === selectedMsgId);
+      if (targetMsg) {
+        const chatContainer = document.getElementById('chatContainer');
+        const msgDom = document.querySelector(`[data-msg-id="${selectedMsgId}"]`);
+        if (msgDom) {
+          msgDom.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          msgDom.style.boxShadow = '0 0 0 2px #0084ff';
+          setTimeout(() => msgDom.style.boxShadow = 'none', 2000);
+        }
+        alert(`已回溯到 ${new Date(targetMsg.time).toLocaleTimeString()} 的消息`);
+      }
+      document.getElementById('msgMenu').style.display = 'none';
+    }
+
+    function deleteMsg() {
+      const chatLogs = currentContact.chatLogs;
+      const targetIndex = chatLogs.findIndex(log => log.id === selectedMsgId);
+      if (targetIndex !== -1) {
+        chatLogs.splice(targetIndex, 1);
+        saveQQConfig();
+        renderChatLogs();
+      }
+      document.getElementById('msgMenu').style.display = 'none';
+    }
+
+    // 14. 联系人设置相关函数
+    function toggleContactSetting() {
+      const settingPage = document.getElementById('contactSettingPage');
+      settingPage.classList.toggle('active');
+      renderApiSelect();
+    }
+
+    function renderApiSelect() {
+      const apiSelect = document.getElementById('settingApiSelect');
+      const savedApi = localStorage.getItem(STORAGE_KEYS.API);
+      if (!savedApi) return;
+
+      const apiList = JSON.parse(savedApi);
+      apiSelect.innerHTML = '<option value="-1">请选择API</option>';
+      apiList.forEach(api => {
+        const option = document.createElement('option');
+        option.value = api.apiKey;
+        option.textContent = api.apiName;
+        if (currentContact.apiId === api.apiKey) {
+          option.selected = true;
+        }
+        apiSelect.appendChild(option);
+      });
+    }
+
+    async function updateSettingAvatar(input) {
+      const file = input.files[0];
+      if (!file) return;
+      // 转Base64并保存
+      const base64Url = await imageToBase64(file);
+      currentContact.avatar = base64Url;
+      // 同步到imageMap
+      const savedQQ = localStorage.getItem(STORAGE_KEYS.QQ);
+      const qqConfig = savedQQ ? JSON.parse(savedQQ) : { imageMap: {} };
+      qqConfig.imageMap[`avatar_${currentContact.id}`] = base64Url;
+      localStorage.setItem(STORAGE_KEYS.QQ, JSON.stringify(qqConfig));
+      // 更新DOM
+      document.getElementById('settingAvatarImg').src = base64Url;
+      input.value = '';
+    }
+
+    async function updateSettingBg(input) {
+      const file = input.files[0];
+      if (!file) return;
+      // 转Base64并保存
+      const base64Url = await imageToBase64(file);
+      currentContact.bg = base64Url;
+      // 同步到imageMap
+      const savedQQ = localStorage.getItem(STORAGE_KEYS.QQ);
+      const qqConfig = savedQQ ? JSON.parse(savedQQ) : { imageMap: {} };
+      qqConfig.imageMap[`bg_${currentContact.id}`] = base64Url;
+      localStorage.setItem(STORAGE_KEYS.QQ, JSON.stringify(qqConfig));
+      // 更新DOM
+      document.getElementById('settingBgImg').src = base64Url;
+      document.getElementById('chatBg').innerHTML = `<img src="${base64Url}" alt="聊天背景">`;
+      input.value = '';
+    }
+
+    function deleteAllChatLogs() {
+      if (confirm('确定删除所有聊天记录？')) {
+        currentContact.chatLogs = [];
+        saveQQConfig();
+        renderChatLogs();
+        alert('所有聊天记录已删除！');
+      }
+    }
+
+    function deleteContact() {
+      if (confirm('确定删除该联系人？删除后不可恢复！')) {
+        const savedQQ = localStorage.getItem(STORAGE_KEYS.QQ);
+        const qqConfig = JSON.parse(savedQQ);
+        qqConfig.contacts = qqConfig.contacts.filter(contact => contact.id !== currentChatId);
+        localStorage.setItem(STORAGE_KEYS.QQ, JSON.stringify(qqConfig));
+        backToQQMain();
+      }
+    }
+
+    // 15. 页面跳转与功能弹窗控制
+    function backToContactDetail() {
+      saveQQConfig();
+      localStorage.setItem('currentContactId', currentChatId);
+      window.location.href = 'qq-contact-detail.html';
+    }
+
+    function backToQQMain() {
+      saveQQConfig();
+      localStorage.removeItem('currentChatContactId');
+      localStorage.removeItem('currentContactId');
+      window.location.href = 'qq-main.html';
+    }
+
+    function toggleFuncModal() {
+      const funcModal = document.getElementById('funcModal');
+      const otherModals = [
+        document.getElementById('emojiModal'),
+        document.getElementById('musicModal'),
+        document.getElementById('transferModal'),
+        document.getElementById('redpacketModal')
+      ];
+      otherModals.forEach(modal => modal.classList.remove('active'));
+      funcModal.classList.toggle('active');
+    }
+
+    function toggleEmojiModal() {
+      const emojiModal = document.getElementById('emojiModal');
+      const funcModal = document.getElementById('funcModal');
+      funcModal.classList.remove('active');
+      emojiModal.classList.toggle('active');
+    }
+
+    function toggleMusicModal() {
+      const musicModal = document.getElementById('musicModal');
+      const funcModal = document.getElementById('funcModal');
+      funcModal.classList.remove('active');
+      musicModal.classList.toggle('active');
+      renderMusicList();
+    }
+
+    // 16. 点击空白处关闭菜单
+    document.addEventListener('click', (e) => {
+      const msgMenu = document.getElementById('msgMenu');
+      if (!msgMenu.contains(e.target) && !e.target.closest('[data-msg-id]')) {
+        msgMenu.style.display = 'none';
+      }
+    });
+
+    // 17. 键盘回车发送消息
+    document.getElementById('chatInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !isVoiceInput) {
+        sendMsg();
+      }
+    });
+  </script>
+</body>
+</html>
+
+
+

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>联系人详情 - 可爱QQ</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "PingFang SC", "微软雅黑", sans-serif;
+    }
+    body {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f5f5f5;
+    }
+    /* 手机容器 */
+    .phone-screen {
+      width: 375px;
+      height: 812px;
+      border: 1px solid #eee;
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    /* 返回键 */
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 36px;
+      height: 36px;
+      background: #f8dce8;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(255,182,193,0.3);
+      z-index: 999;
+    }
+    .back-btn::after {
+      content: '';
+      width: 14px;
+      height: 14px;
+      border-top: 2px solid #ffabb8;
+      border-left: 2px solid #ffabb8;
+      transform: rotate(-45deg);
+    }
+    /* 详情页背景 */
+    .detail-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 200px;
+      background: #f0f8ff;
+      z-index: 980;
+    }
+    .detail-bg img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    /* 联系人头像（悬浮在背景上） */
+    .contact-avatar {
+      position: absolute;
+      top: 140px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: #eee;
+      overflow: hidden;
+      border: 4px solid #fff;
+      z-index: 985;
+    }
+    .contact-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    /* 联系人名称 */
+    .contact-name {
+      position: absolute;
+      top: 270px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 20px;
+      color: #333;
+      font-weight: bold;
+      z-index: 985;
+    }
+    /* 联系人设定 */
+    .contact-setting {
+      position: absolute;
+      top: 300px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      color: #999;
+      z-index: 985;
+    }
+    /* 功能按钮区 */
+    .btn-area {
+      position: absolute;
+      top: 340px;
+      left: 0;
+      width: 100%;
+      padding: 0 20px;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      z-index: 985;
+    }
+    .func-btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 20px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .chat-btn {
+      background: #ff69b4;
+      color: #fff;
+    }
+    .dynamic-btn {
+      background: #f5f5f5;
+      color: #333;
+    }
+    /* 内容区（动态空间） */
+    .content-container {
+      position: absolute;
+      top: 400px;
+      left: 0;
+      width: 100%;
+      height: calc(100% - 400px);
+      padding: 20px;
+      overflow-y: auto;
+      z-index: 980;
+    }
+    /* 空动态提示 */
+    .empty-dynamic {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: #999;
+      font-size: 14px;
+    }
+    .empty-dynamic-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+      color: #eee;
+    }
+    /* 动态项（复用QQ主界面样式） */
+    .moment-item {
+      padding: 15px;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      margin-bottom: 15px;
+    }
+    .moment-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .moment-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #eee;
+      overflow: hidden;
+      margin-right: 10px;
+    }
+    .moment-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .moment-name {
+      font-size: 14px;
+      color: #333;
+      font-weight: 500;
+    }
+    .moment-content {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+    .moment-media {
+      width: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .moment-media img, .moment-media video {
+      width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-screen">
+    <!-- 返回键（返回QQ主界面） -->
+    <div class="back-btn" onclick="backToQQMain()"></div>
+    <!-- 详情页背景 -->
+    <div class="detail-bg" id="detailBg">
+      <img src="app.img/default-bg.jpg" alt="详情页背景">
+    </div>
+    <!-- 联系人头像 -->
+    <div class="contact-avatar" id="contactAvatar">
+      <img src="app.img/default-contact.png" alt="联系人头像">
+    </div>
+    <!-- 联系人名称 -->
+    <div class="contact-name" id="contactName">联系人名称</div>
+    <!-- 联系人设定 -->
+    <div class="contact-setting" id="contactSetting">暂无设定</div>
+    <!-- 功能按钮区 -->
+    <div class="btn-area">
+      <button class="func-btn chat-btn" onclick="goToChat()">
+        💬 开始聊天
+      </button>
+      <button class="func-btn dynamic-btn" onclick="goToContactDynamic()">
+        📱 动态空间
+      </button>
+    </div>
+    <!-- 内容区（动态空间） -->
+    <div class="content-container" id="dynamicContainer">
+      <div class="empty-dynamic">
+        <div class="empty-dynamic-icon">📱</div>
+        <div>该联系人暂无动态</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 本地存储Key
+    const STORAGE_KEYS = {
+      QQ: 'qqConfig'
+    };
+    // 当前联系人ID
+    let currentContactId = -1;
+    // 当前联系人信息
+    let currentContact = null;
+
+    // 页面初始化：加载联系人信息
+    window.onload = initDetailPage();
+
+    // 1. 初始化详情页
+    function initDetailPage() {
+      // 获取当前联系人ID
+      currentContactId = localStorage.getItem('currentContactId');
+      if (!currentContactId) {
+        // 无ID时返回QQ主界面
+        backToQQMain();
+        return;
+      }
+      currentContactId = parseInt(currentContactId);
+
+      // 读取QQ配置，找到对应联系人
+      const savedQQ = localStorage.getItem(STORAGE_KEYS.QQ);
+      if (!savedQQ) {
+        backToQQMain();
+        return;
+      }
+      const qqConfig = JSON.parse(savedQQ);
+      currentContact = qqConfig.contacts.find(contact => contact.id === currentContactId);
+      if (!currentContact) {
+        backToQQMain();
+        return;
+      }
+
+      // 渲染联系人详情
+      renderContactDetail();
+      // 渲染联系人动态
+      renderContactDynamic();
+    }
+
+    // 2. 渲染联系人详情
+    function renderContactDetail() {
+      // 渲染背景
+      const detailBg = document.getElementById('detailBg');
+      detailBg.innerHTML = `<img src="${currentContact.bg || 'app.img/default-bg.jpg'}" alt="详情页背景">`;
+      // 渲染头像
+      const contactAvatar = document.getElementById('contactAvatar');
+      contactAvatar.innerHTML = `<img src="${currentContact.avatar || 'app.img/default-contact.png'}" alt="${currentContact.name}">`;
+      // 渲染名称
+      document.getElementById('contactName').textContent = currentContact.name;
+      // 渲染设定
+      document.getElementById('contactSetting').textContent = currentContact.setting || '暂无设定';
+    }
+
+    // 3. 渲染联系人动态
+    function renderContactDynamic() {
+      const dynamicContainer = document.getElementById('dynamicContainer');
+      const savedQQ = localStorage.getItem(STORAGE_KEYS.QQ);
+      if (!savedQQ) return;
+
+      const qqConfig = JSON.parse(savedQQ);
+      // 筛选该联系人的动态
+      const contactMoments = qqConfig.moments.filter(moment => moment.authorId === currentContact.id);
+
+      if (contactMoments.length === 0) {
+        dynamicContainer.innerHTML = `
+          <div class="empty-dynamic">
+            <div class="empty-dynamic-icon">📱</div>
+            <div>该联系人暂无动态</div>
+          </div>
+        `;
+        return;
+      }
+
+      // 按时间降序排序
+      contactMoments.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+      // 渲染动态列表
+      let html = '';
+      contactMoments.forEach(moment => {
+        // 处理媒体内容
+        let mediaHtml = '';
+        if (moment.media) {
+          if (moment.media.type === 'image') {
+            mediaHtml = `<div class="moment-media"><img src="${moment.media.url}" alt="动态图片"></div>`;
+          } else if (moment.media.type === 'video') {
+            mediaHtml = `<div class="moment-media"><video controls src="${moment.media.url}"></video></div>`;
+          }
+        }
+
+        // 处理评论
+        let commentHtml = '';
+        if (moment.comments && moment.comments.length > 0) {
+          moment.comments.forEach(comment => {
+            commentHtml += `
+              <div style="padding:5px 0; font-size:12px; color:#666;">
+                <span style="color:#ff69b4;">${comment.authorName}：</span>${comment.content}
+              </div>
+            `;
+          });
+        }
+
+        html += `
+          <div class="moment-item">
+            <div class="moment-header">
+              <div class="moment-avatar">
+                <img src="${moment.authorAvatar}" alt="${moment.authorName}">
+              </div>
+              <div class="moment-name">${moment.authorName}</div>
+            </div>
+            <div class="moment-content">${moment.content}</div>
+            ${mediaHtml}
+            ${commentHtml}
+          </div>
+        `;
+      });
+
+      dynamicContainer.innerHTML = html;
+    }
+
+    // 4. 跳转聊天界面
+    function goToChat() {
+      // 存储当前聊天联系人ID
+      localStorage.setItem('currentChatContactId', currentContactId);
+      window.location.href = 'qq-chat.html';
+    }
+
+    // 5. 跳转联系人动态页（简化，此处复用详情页动态列表）
+    function goToContactDynamic() {
+      alert('已展示该联系人所有动态～');
+    }
+
+    // 6. 返回QQ主界面
+    function backToQQMain() {
+      // 清除临时存储的联系人ID
+      localStorage.removeItem('currentContactId');
+      window.location.href = 'qq-main.html';
+    }
+  </script>
+</body>
+</html>
